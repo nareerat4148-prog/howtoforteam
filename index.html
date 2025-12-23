@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server & System Troubleshooting Guide (Pro)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel/CSV Export/Import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .cmd-box { background-color: #1e293b; color: #38bdf8; font-family: 'Consolas', 'Monaco', monospace; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; }
+        .tab-btn.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .tab-content { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom Modal */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 relative">
+
+    <!-- Top Info Bar -->
+    <div class="fixed top-0 left-0 w-full h-8 bg-slate-900 text-slate-300 z-50 flex items-center justify-between px-4 sm:px-6 lg:px-8 text-xs font-medium">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+            </svg>
+            <span>Last Update: 23 ธันวาคม 2568 เวลา 08:30 น.</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-slate-500">Editor:</span>
+            <span class="text-white font-bold bg-blue-600 px-2 py-0.5 rounded-full">ตูน</span>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="glass-header fixed w-full z-40 border-b border-slate-200 shadow-sm top-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 01-2 2v4a2 2 0 01-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                    </div>
+                    <span class="font-bold text-xl text-slate-800">System <span class="text-blue-600">Troubleshooter</span></span>
+                </div>
+                <!-- Data Management Tools -->
+                <div class="flex gap-2">
+                    <button onclick="downloadTemplate()" class="hidden md:flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Download CSV Template">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Get Template
+                    </button>
+                    <button onclick="triggerImport()" class="hidden md:flex items-center gap-1 bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Import CSV Data">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import CSV
+                    </button>
+                    
+                    <!-- แก้ไขส่วน Export ให้เป็น Click Dropdown แทน Hover -->
+                    <div class="relative">
+                        <button onclick="toggleExportMenu()" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Export Current Data">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export ▼
+                        </button>
+                        <div id="exportMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden border border-slate-200 z-50">
+                            <button type="button" onclick="exportData('csv')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export as CSV</button>
+                            <button type="button" onclick="exportData('xlsx')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100">Export as XLSX</button>
+                        </div>
+                    </div>
+
+                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileImport(this)">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        
+        <!-- Search Section -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-slate-900">ค้นหา Error Code หรืออาการที่พบ</h1>
+            <div class="relative max-w-2xl mx-auto">
+                <input type="text" id="searchInput" placeholder="พิมพ์เช่น 500, Azure, Printer, Telnet..." 
+                    class="w-full px-6 py-4 rounded-full border-2 border-slate-200 focus:border-blue-500 focus:outline-none shadow-lg text-lg transition-colors">
+                <div class="absolute right-4 top-4 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+            <p id="searchStatus" class="mt-2 text-sm text-amber-600 hidden font-medium">กำลังแสดงผลลัพธ์จากการค้นหา (โหมดแท็บถูกปิดชั่วคราว)</p>
+            <!-- Mobile Buttons -->
+            <div class="flex md:hidden justify-center gap-2 mt-4 flex-wrap">
+                <button onclick="downloadTemplate()" class="bg-amber-500 text-white px-4 py-2 rounded shadow text-sm">Template</button>
+                <button onclick="triggerImport()" class="bg-slate-600 text-white px-4 py-2 rounded shadow text-sm">Import CSV</button>
+                 <button onclick="clearLocalStorage()" class="bg-red-500 text-white px-4 py-2 rounded shadow text-sm">Reset</button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap justify-center gap-2 mb-8 sticky top-24 z-30 bg-slate-50 py-2" id="tabContainer">
+            <button onclick="switchTab('web-app')" id="btn-web-app" class="tab-btn active px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🌐</span> Web & App</button>
+            <button onclick="switchTab('sys-data')" id="btn-sys-data" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>💾</span> System & Data</button>
+            <button onclick="switchTab('net-infra')" id="btn-net-infra" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🔌</span> Network & Infra</button>
+            <button onclick="switchTab('tools')" id="btn-tools" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🛠️</span> Tools</button>
+        </div>
+
+        <!-- TAB 1: WEB & APP -->
+        <div id="web-app" class="tab-content block space-y-8">
+            <section class="category-section" data-category="HTTP Status Codes">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-green-100 rounded-lg text-green-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">HTTP Status Codes</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/6">Code</th><th class="p-4 w-1/6">Responsibility</th><th class="p-4 w-1/3">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                            <tbody id="tbody-http" class="divide-y divide-slate-100 text-sm md:text-base search-target">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="category-section" data-category="IIS & ASP.NET Application">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">IIS & ASP.NET Application</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error / Message</th><th class="p-4 w-1/5">Responsibility</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                            <tbody id="tbody-iis" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+             <section class="category-section" data-category="Browser & SSL/TLS">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-pink-600 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Browser & SSL/TLS</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                            <tbody id="tbody-browser" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+             <section class="category-section" data-category="Libraries & MS Office">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-teal-100 rounded-lg text-teal-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Libraries & MS Office</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                            <tbody id="tbody-lib" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 2: SYSTEM & DATA -->
+        <div id="sys-data" class="tab-content hidden space-y-8">
+            <section class="category-section" data-category="Identity (AD, Azure, IIS Auth)">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-violet-100 rounded-lg text-violet-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Identity (AD, Azure, IIS Auth)</h2>
+                </div>
+                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-identity" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                    </div>
+                 </div>
+            </section>
+
+             <section class="category-section" data-category="Database (SQL Server)">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-yellow-100 rounded-lg text-yellow-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Database (SQL Server)</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-db" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+            <section class="category-section" data-category="File System & Permissions">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-amber-600 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">File System & Permissions</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-files" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+            <section class="category-section" data-category="Storage & System Services">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-slate-500 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Storage & System Services</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-storage" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+             <section class="category-section">
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-blue-800 mb-4">🔑 เข้าใจเรื่อง User Account (ใช้ตัวไหนดี?)</h3>
+                    <ul class="space-y-3 text-slate-700">
+                        <li><strong>IIS AppPool\[Name]:</strong> <span class="text-green-600 font-bold">แนะนำสูงสุด</span> สำหรับ Web App ปลอดภัยและแยกสิทธิ์ชัดเจน</li>
+                        <li><strong>IUSR:</strong> สำหรับให้สิทธิ์ "คนนอก" อ่านไฟล์หน้าเว็บ (Public Read)</li>
+                        <li><strong>Network Service:</strong> ใช้เมื่อต้องการให้ App ติดต่อกับ Server อื่นใน Domain</li>
+                        <li><strong>Local System:</strong> <span class="text-red-600 font-bold">ห้ามใช้!</span> สิทธิ์สูงเกินไป อันตรายต่อระบบ</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 3: NETWORK & INFRA -->
+        <div id="net-infra" class="tab-content hidden space-y-8">
+             <section class="category-section" data-category="Network, Port & SMTP">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-gray-200 rounded-lg text-gray-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Network, Port & SMTP</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-network" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+             <section class="category-section" data-category="Email SMTP (Gmail/Outlook)">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-red-100 rounded-lg text-red-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Email SMTP (Gmail/Outlook)</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-email" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+             <section class="category-section" data-category="Printer & RPC">
+                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-pink-100 rounded-lg text-pink-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Printer & RPC</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                             <tbody id="tbody-printer" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 4: TOOLS -->
+        <div id="tools" class="tab-content hidden space-y-8">
+            <section class="category-section" data-category="Basic Troubleshooting Tools">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-slate-700 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">Basic Troubleshooting Tools (CMD)</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Command</th><th class="p-4 w-1/3">Example</th><th class="p-4 w-1/3">Purpose</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100 text-sm md:text-base search-target">
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Telnet</td><td class="p-4"><code class="cmd-box">telnet smtp.gmail.com 587</code></td><td class="p-4">เช็คว่า Port ปลายทางเปิดหรือไม่ (ถ้าจอดำ=ผ่าน)</td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Test-NetConnection</td><td class="p-4"><code class="cmd-box">tnc 8.8.8.8 -port 53</code></td><td class="p-4">เหมือน Telnet แต่ใช้ใน PowerShell (ดู TcpTestSucceeded)</td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Netstat</td><td class="p-4"><code class="cmd-box">netstat -ano | findstr :80</code></td><td class="p-4">เช็คว่าเครื่องเราเปิด Port อะไรอยู่ / ใครแย่ง Port</td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Ping</td><td class="p-4"><code class="cmd-box">ping google.com</code></td><td class="p-4">เช็คว่า Server ปลายทางเปิดอยู่ไหม</td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Check Firewall</td><td class="p-4"><span class="text-sm bg-gray-100 p-1 rounded">Turn off Firewall temporarily</span></td><td class="p-4">ปิด Firewall ชั่วคราวเพื่อเทสว่าโดนบล็อกไหม</td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Nslookup</td><td class="p-4"><code class="cmd-box">nslookup domain.com</code></td><td class="p-4">เช็ค DNS Resolution</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+            <p>&copy; 2025 Server Troubleshooting Guide (Pro Version). Powered by LocalStorage & SheetJS.</p>
+        </div>
+    </footer>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        // --- 1. INITIAL DATA (Default Data) ---
+        // Storing default data in JS allows easily appending new data from import.
+        const defaultData = [
+            // HTTP Status
+            { cat: "HTTP Status Codes", code: "500", role: "APP DEVELOPER", desc: "Internal Server Error (Code Error)", sol: "ดู Log ไฟล์ / เปิด `customErrors=Off` เพื่อดู Stack Trace" },
+            { cat: "HTTP Status Codes", code: "503", role: "SERVER ADMIN", desc: "App Pool หยุดทำงาน หรือ Server Overload", sol: "Start App Pool ใน IIS / เช็ค RAM, CPU Server" },
+            { cat: "HTTP Status Codes", code: "403", role: "SERVER ADMIN", desc: "Forbidden (ไม่มีสิทธิ์เข้าถึง)", sol: "เพิ่มสิทธิ์ Read/List ให้ User `IIS_IUSRS` ที่โฟลเดอร์" },
+            { cat: "HTTP Status Codes", code: "404", role: "APP DEVELOPER", desc: "Not Found (ไม่พบไฟล์/URL)", sol: "เช็ค URL Routing, Config หรือไฟล์ว่ามีอยู่จริง" },
+            { cat: "HTTP Status Codes", code: "502", role: "SERVER ADMIN", desc: "Bad Gateway (Proxy Error)", sol: "เช็ค Service ปลายทางว่า Down หรือไม่ / Restart App Pool" },
+            
+            // IIS
+            { cat: "IIS & ASP.NET Application", code: "Object reference not set...", role: "APP DEVELOPER", desc: "Code: Null Reference (ตัวแปรว่างเปล่า)", sol: "แก้ Code: เพิ่มเงื่อนไขเช็ค `!= null` ก่อนใช้" },
+            { cat: "IIS & ASP.NET Application", code: "System.IO.FileNotFound", role: "APP DEVELOPER", desc: "หาไฟล์ DLL/Config ไม่เจอ", sol: "เช็คไฟล์ใน `bin`, ตรวจสอบ Path ใน Config" },
+            { cat: "IIS & ASP.NET Application", code: "Configuration Errors", role: "APP DEVELOPER", desc: "Web.config เขียนผิดโครงสร้าง", sol: "แก้ Syntax XML ใน `web.config` ให้ถูกต้อง" },
+            { cat: "IIS & ASP.NET Application", code: "OutOfMemoryException", role: "SHARED", desc: "RAM ไม่พอ / Code Memory Leak", sol: "IISReset / หาจุด Memory Leak ใน Code / เพิ่ม RAM" },
+            { cat: "IIS & ASP.NET Application", code: "0x8007000B / Incorrect format", role: "SHARED", desc: "32-bit vs 64-bit ไม่ตรงกัน", sol: "IIS > AppPool > Advanced > Enable 32-Bit = True" },
+            { cat: "IIS & ASP.NET Application", code: "Maximum request length exceeded", role: "APP DEVELOPER", desc: "อัปโหลดไฟล์ใหญ่เกินกำหนด (4MB)", sol: "เพิ่ม `maxRequestLength` และ `maxAllowedContentLength` ใน Config" },
+
+            // Browser SSL
+            { cat: "Browser & SSL/TLS", code: "Blocked by CORS policy", role: "SHARED", desc: "ติด Cross-Domain Security", sol: "Server: เพิ่ม Header `Access-Control-Allow-Origin`" },
+            { cat: "Browser & SSL/TLS", code: "Mixed Content", role: "APP DEVELOPER", desc: "HTTPS เรียกใช้ HTTP (ไม่ปลอดภัย)", sol: "แก้ Link (img/script) เป็น `https://` หรือ `//`" },
+            { cat: "Browser & SSL/TLS", code: "ERR_CERT_AUTHORITY_INVALID", role: "SERVER ADMIN", desc: "Certificate ไม่น่าเชื่อถือ / หมดอายุ", sol: "ต่ออายุ SSL / Install Root CA ลงเครื่อง Client (เฉพาะภายใน)" },
+            { cat: "Browser & SSL/TLS", code: "ERR_TOO_MANY_REDIRECTS", role: "APP DEVELOPER", desc: "Redirect วนลูปไม่รู้จบ", sol: "เช็ค Logic Redirect ใน Code / URL Rewrite Rule ใน IIS" },
+
+            // Libraries
+            { cat: "Libraries & MS Office", code: "DllNotFoundException", role: "SHARED", desc: "ขาดไฟล์ .dll ภายนอก", sol: "ลง VC++ Redistributable / ก๊อป DLL ลง `bin` หรือ `System32`" },
+            { cat: "Libraries & MS Office", code: "GDI+ Generic Error", role: "APP DEVELOPER", desc: "Memory Lock ในระบบรูปภาพ", sol: "แก้ Code: ใช้ `using` หรือ `.Dispose()` / ห้าม Save ทับทันที" },
+            { cat: "Libraries & MS Office", code: "Font not found / □□□", role: "SERVER ADMIN", desc: "Server ไม่มี Font ที่ระบุ", sol: "ลง Font ที่ Server > Restart Server" },
+            { cat: "Libraries & MS Office", code: "0x80040154 Class not registered", role: "SERVER ADMIN", desc: "ไม่มีโปรแกรม Office หรือ Bit ไม่ตรง", sol: "ลง MS Office / Access Runtime (x86/x64 ให้ตรงกัน)" },
+            { cat: "Libraries & MS Office", code: "0x80070005 Access is denied", role: "SERVER ADMIN", desc: "IIS User ไม่มีสิทธิ์เปิด Excel (DCOM)", sol: "`dcomcnfg` > Excel > Security > Add IIS User ให้สิทธิ์" },
+            { cat: "Libraries & MS Office", code: "Call was rejected by callee", role: "SHARED", desc: "Office ค้าง (Popup/Busy)", sol: "Task Manager > End Task Excel.exe / ใช้ OpenXML แทน" },
+
+            // Identity
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "0x8009030C / SEC_E_LOGON_DENIED", role: "SERVER ADMIN", desc: "Account ถูก Lock หรือรหัสผิด", sol: "AD Users > ปลด Lock Account / Reset Password" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "Clock skew too great", role: "SERVER ADMIN", desc: "เวลา Server ไม่ตรงกับ AD (เกิน 5 นาที)", sol: "CMD: `w32tm /resync` ที่เครื่อง Server" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "LDAP: Server not operational", role: "SERVER ADMIN", desc: "ติดต่อ Domain Controller ไม่ได้", sol: "เช็ค DNS / Ping IP Domain Controller" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50011 Reply URL", role: "APP DEVELOPER", desc: "Azure Redirect URI ไม่ตรง", sol: "Azure Portal > Auth > เพิ่ม Redirect URI ให้ตรงกับ Code" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50076 MFA Required", role: "SHARED", desc: "ต้องใช้ MFA (ติด Policy)", sol: "App ต้องรองรับ OAuth2 / ปรับ Policy ยกเว้น MFA" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS70002 Secret expired", role: "APP DEVELOPER", desc: "Client Secret หมดอายุ", sol: "Azure Portal > Certs & Secrets > สร้างใหม่ > อัปเดต Config" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.1 Logon Failed", role: "SHARED", desc: "User/Pass ผิด หรือไม่มีสิทธิ์", sol: "เช็ค User/Pass ใน IIS / สิทธิ์ NTFS โฟลเดอร์" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.2 Config", role: "SERVER ADMIN", desc: "ไม่ได้เปิด Auth Method (Anon/Win)", sol: "IIS > Authentication > Enable Anonymous/Windows" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401 Challenge Loop", role: "SERVER ADMIN", desc: "NTLM Loopback Check (เทสบนเครื่อง)", sol: "RegEdit: เพิ่ม `DisableLoopbackCheck` = 1" },
+
+            // Database
+            { cat: "Database (SQL Server)", code: "Error: 26 (Network Interfaces)", role: "SERVER ADMIN", desc: "หา Database Server ไม่เจอ", sol: "เช็ค Service SQL, เช็ค IP/Firewall" },
+            { cat: "Database (SQL Server)", code: "Login failed for user...", role: "APP DEVELOPER", desc: "User/Pass DB ผิด", sol: "แก้ Connection String ใน Web.config" },
+            { cat: "Database (SQL Server)", code: "Timeout expired", role: "SHARED", desc: "Query นานเกินกำหนด", sol: "Tuning SQL Query / ทำ Index" },
+            { cat: "Database (SQL Server)", code: "Deadlock found", role: "APP DEVELOPER", desc: "แย่งกันใช้ข้อมูล (Process ชนกัน)", sol: "ใช้ `WITH (NOLOCK)` หรือจัดลำดับ Query" },
+            { cat: "Database (SQL Server)", code: "Transaction log is full", role: "SERVER ADMIN", desc: "ไฟล์ Log (.ldf) เต็ม", sol: "Backup Log / Shrink File" },
+            { cat: "Database (SQL Server)", code: "Conflict with FOREIGN KEY", role: "APP DEVELOPER", desc: "ข้อมูลขัดแย้ง (Relation ผิด)", sol: "เช็ค ID ในตารางหลักว่ามีอยู่จริงก่อน Insert" },
+
+            // Files
+            { cat: "File System & Permissions", code: "Access to path denied", role: "SERVER ADMIN", desc: "IIS User ไม่มีสิทธิ์เขียนไฟล์", sol: "Properties > Security > Add `IIS AppPool\\Name` (Modify)" },
+            { cat: "File System & Permissions", code: "Access Denied (Full Control)", role: "SERVER ADMIN", desc: "ให้สิทธิ์แล้วยังไม่ได้ (ติด Deny/Owner)", sol: "เช็ค Deny Rule / Take Ownership เป็น Admin" },
+            { cat: "File System & Permissions", code: "File in use", role: "SHARED", desc: "ไฟล์ถูกล็อกโดยโปรแกรมอื่น", sol: "ใช้ Resource Monitor หา Handle > End Process" },
+            { cat: "File System & Permissions", code: "Path too long", role: "APP DEVELOPER", desc: "ชื่อไฟล์ยาวเกิน 260 ตัวอักษร", sol: "ย้ายไฟล์ให้ Path สั้นลง / เปิด LongPath" },
+
+            // Storage
+            { cat: "Storage & System Services", code: "Not enough space on disk", role: "SERVER ADMIN", desc: "Disk เต็ม (Web/DB หยุดทำงาน)", sol: "ลบไฟล์ขยะ Temp / IIS Logs" },
+            { cat: "Storage & System Services", code: "Service failed to start", role: "SERVER ADMIN", desc: "Service เริ่มไม่ได้ (Dependency ตาย)", sol: "ดู Event Viewer และ Start Service แม่" },
+            { cat: "Storage & System Services", code: "Task Scheduler Error", role: "SHARED", desc: "Task รันไม่ผ่าน / Script พัง", sol: "เช็ค `Start in` (Path) / ติ๊ก `Run with highest privileges`" },
+
+            // Network
+            { cat: "Network, Port & SMTP", code: "Connection Refused", role: "SERVER ADMIN", desc: "Service ปลายทางไม่เปิด", sol: "Start Service ปลายทาง / เช็ค IP Port" },
+            { cat: "Network, Port & SMTP", code: "Port 80/443 in use", role: "SERVER ADMIN", desc: "Port ชน (Skype/VMWare แย่ง)", sol: "CMD: `netstat -ano | findstr :Port` > Kill PID" },
+            { cat: "Network, Port & SMTP", code: "DNS_PROBE...NXDOMAIN", role: "SERVER ADMIN", desc: "หา Domain ไม่เจอ", sol: "เช็ค IP DNS Server / `ipconfig /flushdns`" },
+            { cat: "Network, Port & SMTP", code: "Request Timed Out", role: "SERVER ADMIN", desc: "เน็ตหลุด / Firewall บล็อก", sol: "เช็คสาย LAN / VPN / Windows Firewall" },
+
+            // Email
+            { cat: "Email SMTP (Gmail/Outlook)", code: "5.5.1 Auth Required (Gmail)", role: "APP DEVELOPER", desc: "Gmail บล็อกรหัสผ่านปกติ", sol: "เปิด 2FA Gmail > สร้าง <strong>App Password</strong> ใส่แทน Pass เดิม" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "Connection Timed Out (Port 25)", role: "SERVER ADMIN", desc: "ISP/Firewall บล็อก Port 25", sol: "เปลี่ยน Port เป็น 587 (TLS) หรือ 465 (SSL)" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "5.7.57 Client not auth (Outlook)", role: "SHARED", desc: "O365 ปิด SMTP Auth", sol: "Admin Center > User > Mail > Manage email apps > ติ๊ก Authenticated SMTP" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "SendAsDenied", role: "APP DEVELOPER", desc: "User กับ Email From ไม่ตรงกัน", sol: "แก้ Email 'From' ให้ตรงกับ User ที่ Login" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "Relay Access Denied", role: "SERVER ADMIN", desc: "Server ไม่รู้จัก IP เรา", sol: "แจ้ง Mail Admin ให้ Whitelist IP Server นี้" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "Certificate Validation Failed", role: "SHARED", desc: "SSL หมดอายุ / Self-signed", sol: "ต่ออายุ SSL / Dev: `ServerCertificateValidationCallback` (Test Only)" },
+
+            // Printer
+            { cat: "Printer & RPC", code: "RPC Server unavailable (0x800706BA)", role: "SERVER ADMIN", desc: "ติดต่อ Service ปลายทางไม่ได้", sol: "Start Print Spooler / เปิด Port 135,445" },
+            { cat: "Printer & RPC", code: "0x800706D9 Endpoint Mapper", role: "SERVER ADMIN", desc: "Win Firewall Service ปิดอยู่", sol: "Start Service `Windows Defender Firewall` (ต้องเปิด)" },
+            { cat: "Printer & RPC", code: "0x80070035 Network Path Not Found", role: "SERVER ADMIN", desc: "หาเครื่องไม่เจอ / SMB ปิด", sol: "เปิด SMB / เช็ค IP ปลายทาง / `ping` ชื่อเครื่อง" },
+            { cat: "Printer & RPC", code: "0x80070005 Access is denied (RPC)", role: "SERVER ADMIN", desc: "DCOM Permission ไม่พอ", sol: "Dcomcnfg > My Computer > COM Security > Edit Limits" },
+            { cat: "Printer & RPC", code: "0x800706BE RPC Call Failed", role: "SERVER ADMIN", desc: "Service ปลายทาง Crash", sol: "Restart Spooler / เช็ค Driver" },
+            { cat: "Printer & RPC", code: "0x80070721 Security Package", role: "SERVER ADMIN", desc: "เวลา (Time) ไม่ตรงกัน", sol: "ตั้งเวลา Server ให้ตรงกัน (ห่างไม่เกิน 5 นาที)" },
+            { cat: "Printer & RPC", code: "0x0000011b (Security Update)", role: "SERVER ADMIN", desc: "Win Update บล็อก Printer", sol: "RegEdit: `RpcAuthnLevelPrivacyEnabled` = 0 (Restart Spooler)" },
+            { cat: "Printer & RPC", code: "0x00000709 (Check printer name)", role: "SERVER ADMIN", desc: "Win 11 หา Printer ไม่เจอ", sol: "RegEdit: ลบ Printer เก่า / `LegacyDefaultPrinterMode`" },
+            { cat: "Printer & RPC", code: "Driver unavailable / Type 4", role: "SERVER ADMIN", desc: "Driver V4 แชร์ข้าม OS ยาก", sol: "เปลี่ยน Driver บน Server เป็น Type 3 (PCL6)" }
+        ];
+
+        // --- 2. LOGIC: RENDER & STORAGE ---
+
+        const roleColors = {
+            "SERVER ADMIN": "bg-purple-100 text-purple-700",
+            "APP DEVELOPER": "bg-emerald-100 text-emerald-700",
+            "SHARED": "bg-orange-100 text-orange-700",
+            "SHARED / BOTH": "bg-orange-100 text-orange-700"
+        };
+
+        const catMap = {
+            "HTTP Status Codes": "tbody-http",
+            "IIS & ASP.NET Application": "tbody-iis",
+            "Browser & SSL/TLS": "tbody-browser",
+            "Libraries & MS Office": "tbody-lib",
+            "Identity (AD, Azure, IIS Auth)": "tbody-identity",
+            "Database (SQL Server)": "tbody-db",
+            "File System & Permissions": "tbody-files",
+            "Storage & System Services": "tbody-storage",
+            "Network, Port & SMTP": "tbody-network",
+            "Email SMTP (Gmail/Outlook)": "tbody-email",
+            "Printer & RPC": "tbody-printer"
+        };
+
+        function getData() {
+            const localData = localStorage.getItem('errorGuideData');
+            return localData ? JSON.parse(localData) : defaultData;
+        }
+
+        function saveData(data) {
+            localStorage.setItem('errorGuideData', JSON.stringify(data));
+            renderTables();
+        }
+
+        function clearLocalStorage() {
+            if(confirm("Are you sure you want to reset to default data?")) {
+                localStorage.removeItem('errorGuideData');
+                renderTables();
+                alert("Data reset to default.");
+            }
+        }
+
+        function renderTables() {
+            const data = getData();
+            
+            // Clear all tbodies
+            Object.values(catMap).forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = "";
+            });
+
+            // Populate
+            data.forEach(item => {
+                const tbodyId = catMap[item.cat];
+                if (tbodyId) {
+                    const tbody = document.getElementById(tbodyId);
+                    if (tbody) {
+                        const row = document.createElement('tr');
+                        row.className = "hover:bg-slate-50 transition-colors";
+                        const roleClass = roleColors[item.role] || "bg-gray-100 text-gray-700";
+                        
+                        row.innerHTML = `
+                            <td class="p-4 font-mono text-red-600 font-medium">${item.code}</td>
+                            <td class="p-4"><span class="px-2 py-1 ${roleClass} rounded text-xs font-bold">${item.role}</span></td>
+                            <td class="p-4 text-slate-600">${item.desc}</td>
+                            <td class="p-4 text-slate-700">${item.sol}</td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+                }
+            });
+        }
+
+        // --- 3. EXPORT / IMPORT / TEMPLATE LOGIC ---
+        function exportData(type) {
+            // ปิดเมนูหลังกด
+            document.getElementById('exportMenu').classList.add('hidden');
+
+            const data = getData();
+            // Simplify data for export (rename keys)
+            const exportData = data.map(item => ({
+                "Category": item.cat,
+                "Error Code/Message": item.code,
+                "Responsibility": item.role,
+                "Description": item.desc,
+                "Solution": item.sol
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "System Errors");
+
+            if (type === 'csv') {
+                XLSX.writeFile(wb, "System_Error_Guide.csv");
+            } else {
+                XLSX.writeFile(wb, "System_Error_Guide.xlsx");
+            }
+        }
+
+        // ฟังก์ชันเปิดปิดเมนู Export
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // ปิดเมนูเมื่อคลิกที่อื่น
+        window.addEventListener('click', function(e) {
+            const btn = document.querySelector('button[onclick="toggleExportMenu()"]');
+            const menu = document.getElementById('exportMenu');
+            // ตรวจสอบว่ามี element เหล่านี้อยู่จริงหรือไม่ก่อนใช้งาน
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function downloadTemplate() {
+            // Create a single row example
+            const templateData = [
+                {
+                    "Category": "HTTP Status Codes",
+                    "Error Code/Message": "Example 500",
+                    "Responsibility": "APP DEVELOPER",
+                    "Description": "Example Description",
+                    "Solution": "Example Solution"
+                }
+            ];
+            
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "System_Error_Template.csv");
+        }
+
+        function triggerImport() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet);
+                
+                // Map imported data back to internal structure
+                const importedItems = json.map(row => ({
+                    cat: row["Category"] || row["cat"], // flexible key check
+                    code: row["Error Code/Message"] || row["code"],
+                    role: row["Responsibility"] || row["role"],
+                    desc: row["Description"] || row["desc"],
+                    sol: row["Solution"] || row["sol"]
+                })).filter(item => item.cat && item.code); // Validate
+
+                if (importedItems.length > 0) {
+                    const currentData = getData();
+                    const newData = currentData.concat(importedItems);
+                    saveData(newData);
+                    alert(`Successfully imported ${importedItems.length} items!`);
+                } else {
+                    alert("No valid data found in file. Please ensure column headers match Export format.");
+                }
+                input.value = ""; // clear input
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- 4. UI TABS & SEARCH ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.add('bg-white', 'text-slate-600', 'border-slate-300'));
+
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+            let btn = document.getElementById('btn-' + tabId);
+            btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-300');
+            btn.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll('.search-target tr');
+            let tabContainer = document.getElementById('tabContainer');
+            let searchStatus = document.getElementById('searchStatus');
+            let allTabs = document.querySelectorAll('.tab-content');
+
+            if (filter.length > 0) {
+                allTabs.forEach(el => { el.classList.remove('hidden'); el.classList.add('block'); });
+                tabContainer.classList.add('hidden');
+                searchStatus.classList.remove('hidden');
+                rows.forEach(row => {
+                    let text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            } else {
+                rows.forEach(row => row.style.display = '');
+                tabContainer.classList.remove('hidden');
+                searchStatus.classList.add('hidden');
+                switchTab('web-app');
+            }
+        });
+
+        // Initialize
+        renderTables();
+        switchTab('web-app');
+
+    </script>
+</body>
+</html>
