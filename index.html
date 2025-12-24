@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server & System Troubleshooting Guide (Pro)</title>
+    <title>คู่มือแก้ปัญหา Server & System (Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -19,6 +19,21 @@
         /* Custom Modal */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+        /* Version Table Styles */
+        .ver-table th { background-color: #f1f5f9; color: #475569; font-weight: 600; }
+        .ver-badge { padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+        .badge-green { background-color: #dcfce7; color: #166534; }
+        .badge-yellow { background-color: #fef9c3; color: #854d0e; }
+        .badge-red { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Language Toggle Classes - Critical for switching */
+        .lang-en.hidden, .lang-th.hidden { display: none !important; }
+        
+        .ai-response ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        .ai-response ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 0.5rem; }
+        .ai-response strong { font-weight: 700; color: #1e293b; }
+        .ai-response p { margin-bottom: 0.5rem; }
+        .ai-response code { background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; color: #dc2626; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 relative">
@@ -29,11 +44,19 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
             </svg>
-            <span>Last Update: 23 ธันวาคม 2568 เวลา 08:30 น.</span>
+            <span class="lang-th">อัปเดตล่าสุด: 23 ธ.ค. 2568</span>
+            <span class="lang-en hidden">Last Update: 23 Dec 2025</span>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="text-slate-500">Editor:</span>
-            <span class="text-white font-bold bg-blue-600 px-2 py-0.5 rounded-full">ตูน</span>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-slate-500 lang-th">ผู้แก้ไข:</span>
+                <span class="text-slate-500 lang-en hidden">Editor:</span>
+                <span class="text-white font-bold bg-blue-600 px-2 py-0.5 rounded-full">ตูน</span>
+            </div>
+            <!-- Language Switcher -->
+            <button onclick="toggleLanguage()" class="flex items-center gap-1 bg-slate-700 hover:bg-slate-600 text-white px-3 py-0.5 rounded transition-colors border border-slate-600 shadow-sm">
+                <span id="lang-icon">🇹🇭</span> <span id="lang-text" class="font-bold">TH</span>
+            </button>
         </div>
     </div>
 
@@ -47,25 +70,46 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 01-2 2v4a2 2 0 01-2-2m-2-4h.01M17 16h.01" />
                         </svg>
                     </div>
-                    <span class="font-bold text-xl text-slate-800">System <span class="text-blue-600">Troubleshooter</span></span>
+                    <span class="font-bold text-xl text-slate-800">
+                        System <span class="text-blue-600">Troubleshooter</span>
+                    </span>
                 </div>
                 <!-- Data Management Tools -->
-                <div class="flex gap-2">
-                    <button onclick="downloadTemplate()" class="hidden md:flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Download CSV Template">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Get Template
+                <div class="flex gap-2 items-center">
+                    <button onclick="toggleModal('aiModal')" class="hidden md:flex items-center gap-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-all shadow-md border border-violet-400/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 1 0-5z"/></svg> 
+                        <span class="lang-th">AI วิเคราะห์</span><span class="lang-en hidden">AI Analyze</span>
                     </button>
-                    <button onclick="triggerImport()" class="hidden md:flex items-center gap-1 bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Import CSV Data">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import CSV
+
+                    <div class="h-6 w-px bg-slate-300 mx-1 hidden md:block"></div>
+
+                    <button onclick="toggleModal('addModal')" class="hidden md:flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                         <span class="lang-th">เพิ่ม</span><span class="lang-en hidden">Add</span>
+                    </button>
+
+                    <button onclick="downloadTemplate()" class="hidden md:flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> 
+                        <span class="lang-th">แม่แบบ</span><span class="lang-en hidden">Template</span>
                     </button>
                     
-                    <!-- แก้ไขส่วน Export ให้เป็น Click Dropdown แทน Hover -->
+                    <button onclick="triggerImport()" class="hidden md:flex items-center gap-1 bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> 
+                        <span class="lang-th">นำเข้า</span><span class="lang-en hidden">Import</span>
+                    </button>
+                    
                     <div class="relative">
-                        <button onclick="toggleExportMenu()" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors" title="Export Current Data">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export ▼
+                        <button onclick="toggleExportMenu()" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> 
+                            <span class="lang-th">ส่งออก</span><span class="lang-en hidden">Export</span> ▼
                         </button>
                         <div id="exportMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden border border-slate-200 z-50">
-                            <button type="button" onclick="exportData('csv')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export as CSV</button>
-                            <button type="button" onclick="exportData('xlsx')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100">Export as XLSX</button>
+                            <button type="button" onclick="exportData('csv')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <span class="lang-th">ส่งออกเป็น CSV</span><span class="lang-en hidden">Export as CSV</span>
+                            </button>
+                            <button type="button" onclick="exportData('xlsx')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100">
+                                <span class="lang-th">ส่งออกเป็น Excel</span><span class="lang-en hidden">Export as XLSX</span>
+                            </button>
                         </div>
                     </div>
 
@@ -80,9 +124,12 @@
         
         <!-- Search Section -->
         <div class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-slate-900">ค้นหา Error Code หรืออาการที่พบ</h1>
+            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-slate-900">
+                <span class="lang-th">ค้นหา Error Code หรืออาการที่พบ</span>
+                <span class="lang-en hidden">Search Error Code or Symptoms</span>
+            </h1>
             <div class="relative max-w-2xl mx-auto">
-                <input type="text" id="searchInput" placeholder="พิมพ์เช่น 500, Azure, Printer, Telnet..." 
+                <input type="text" id="searchInput" placeholder="503, App Pool, Identity, Memory..." 
                     class="w-full px-6 py-4 rounded-full border-2 border-slate-200 focus:border-blue-500 focus:outline-none shadow-lg text-lg transition-colors">
                 <div class="absolute right-4 top-4 text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,21 +137,37 @@
                     </svg>
                 </div>
             </div>
-            <p id="searchStatus" class="mt-2 text-sm text-amber-600 hidden font-medium">กำลังแสดงผลลัพธ์จากการค้นหา (โหมดแท็บถูกปิดชั่วคราว)</p>
+            <p id="searchStatus" class="mt-2 text-sm text-amber-600 hidden font-medium">
+                <span class="lang-th">กำลังแสดงผลลัพธ์จากการค้นหา (โหมดแท็บถูกปิดชั่วคราว)</span>
+                <span class="lang-en hidden">Showing search results (Tabs mode disabled temporarily)</span>
+            </p>
             <!-- Mobile Buttons -->
             <div class="flex md:hidden justify-center gap-2 mt-4 flex-wrap">
+                <button onclick="toggleModal('aiModal')" class="bg-violet-600 text-white px-4 py-2 rounded shadow text-sm">AI Analyze</button>
+                 <button onclick="toggleModal('addModal')" class="bg-emerald-600 text-white px-4 py-2 rounded shadow text-sm">Add</button>
                 <button onclick="downloadTemplate()" class="bg-amber-500 text-white px-4 py-2 rounded shadow text-sm">Template</button>
-                <button onclick="triggerImport()" class="bg-slate-600 text-white px-4 py-2 rounded shadow text-sm">Import CSV</button>
+                <button onclick="triggerImport()" class="bg-slate-600 text-white px-4 py-2 rounded shadow text-sm">Import</button>
                  <button onclick="clearLocalStorage()" class="bg-red-500 text-white px-4 py-2 rounded shadow text-sm">Reset</button>
             </div>
         </div>
 
         <!-- Tab Navigation -->
         <div class="flex flex-wrap justify-center gap-2 mb-8 sticky top-24 z-30 bg-slate-50 py-2" id="tabContainer">
-            <button onclick="switchTab('web-app')" id="btn-web-app" class="tab-btn active px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🌐</span> Web & App</button>
-            <button onclick="switchTab('sys-data')" id="btn-sys-data" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>💾</span> System & Data</button>
-            <button onclick="switchTab('net-infra')" id="btn-net-infra" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🔌</span> Network & Infra</button>
-            <button onclick="switchTab('tools')" id="btn-tools" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2"><span>🛠️</span> Tools</button>
+            <button onclick="switchTab('web-app')" id="btn-web-app" class="tab-btn active px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2">
+                <span>🌐</span> <span class="lang-th">เว็บ & แอป</span><span class="lang-en hidden">Web & App</span>
+            </button>
+            <button onclick="switchTab('sys-data')" id="btn-sys-data" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2">
+                <span>💾</span> <span class="lang-th">ระบบ & ข้อมูล</span><span class="lang-en hidden">System & Data</span>
+            </button>
+            <button onclick="switchTab('net-infra')" id="btn-net-infra" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2">
+                <span>🔌</span> <span class="lang-th">เครือข่าย & อินฟรา</span><span class="lang-en hidden">Network & Infra</span>
+            </button>
+            <button onclick="switchTab('admin-pro')" id="btn-admin-pro" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2">
+                <span>🚀</span> <span class="lang-th">Pro Admin</span><span class="lang-en hidden">Pro Admin</span>
+            </button>
+            <button onclick="switchTab('versions')" id="btn-versions" class="tab-btn px-5 py-2.5 rounded-full border border-slate-300 bg-white text-slate-600 font-semibold hover:bg-slate-100 transition-all shadow-sm flex items-center gap-2">
+                <span>📦</span> <span class="lang-th">เวอร์ชัน</span><span class="lang-en hidden">Versions</span>
+            </button>
         </div>
 
         <!-- TAB 1: WEB & APP -->
@@ -118,9 +181,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/6">Code</th><th class="p-4 w-1/6">Responsibility</th><th class="p-4 w-1/3">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
-                            <tbody id="tbody-http" class="divide-y divide-slate-100 text-sm md:text-base search-target">
-                                <!-- Data will be loaded here -->
-                            </tbody>
+                            <tbody id="tbody-http" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
                         </table>
                     </div>
                 </div>
@@ -136,6 +197,21 @@
                         <table class="w-full text-left border-collapse">
                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error / Message</th><th class="p-4 w-1/5">Responsibility</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
                             <tbody id="tbody-iis" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="category-section" data-category="IIS Application Pool Strategy">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-blue-600 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">IIS Application Pool Strategy</h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Error / Symptom</th><th class="p-4 w-1/5">Responsibility</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Solution</th></tr></thead>
+                            <tbody id="tbody-apppool" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
                         </table>
                     </div>
                 </div>
@@ -295,130 +371,520 @@
             </section>
         </div>
 
+        <!-- NEW TAB: Pro Admin (Cheatsheets) -->
+        <div id="admin-pro" class="tab-content hidden space-y-8">
+            <!-- Log Files -->
+            <section class="category-section" data-category="Log File Locations">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-rose-600 rounded-lg text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">แผนที่ไฟล์ Log (Log File Locations)</span>
+                        <span class="lang-en hidden">Log File Locations Map</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Log Type</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Path / Location</th></tr></thead>
+                             <tbody id="tbody-logfiles" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+             <!-- Connectivity Tricks -->
+            <section class="category-section" data-category="Connectivity Tricks">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-sky-600 rounded-lg text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">เทคนิคทดสอบการเชื่อมต่อ (No Code)</span>
+                        <span class="lang-en hidden">Connectivity Tricks (No Code)</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Technique</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">How-to</th></tr></thead>
+                             <tbody id="tbody-connectivity" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+
+             <!-- Performance Counters -->
+            <section class="category-section" data-category="Performance Counters">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-fuchsia-600 rounded-lg text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">ค่า Performance ที่ต้องดู (Counters)</span>
+                        <span class="lang-en hidden">Key Performance Counters</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Counter Name</th><th class="p-4 w-1/5">Role</th><th class="p-4 w-1/4">Description</th><th class="p-4 w-1/3">Threshold (ค่าวิกฤต)</th></tr></thead>
+                             <tbody id="tbody-perf" class="divide-y divide-slate-100 text-sm md:text-base search-target"></tbody>
+                        </table>
+                     </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- NEW TAB: Versions & Compatibility (Static Content with Lang Support) -->
+        <div id="versions" class="tab-content hidden space-y-8">
+            <!-- SQL Server -->
+            <section class="category-section">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-blue-600 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">เวอร์ชัน Microsoft SQL Server</span>
+                        <span class="lang-en hidden">Microsoft SQL Server Versions</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <table class="w-full text-left border-collapse ver-table">
+                        <thead><tr class="bg-slate-50 text-slate-700">
+                            <th class="p-4"><span class="lang-th">รุ่น SQL</span><span class="lang-en hidden">SQL Version</span></th>
+                            <th class="p-4"><span class="lang-th">เวอร์ชันภายใน</span><span class="lang-en hidden">Internal Ver.</span></th>
+                            <th class="p-4"><span class="lang-th">สถานะ</span><span class="lang-en hidden">Status</span></th>
+                            <th class="p-4"><span class="lang-th">หมายเหตุ / ความเข้ากันได้</span><span class="lang-en hidden">Note / Compatibility</span></th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">SQL Server 2022</td><td class="p-4">16.0</td><td class="p-4"><span class="ver-badge badge-green">Supported</span></td><td class="p-4"><span class="lang-th">ต้องใช้ Windows Server 2016+</span><span class="lang-en hidden">Requires Windows Server 2016+</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">SQL Server 2019</td><td class="p-4">15.0</td><td class="p-4"><span class="ver-badge badge-green">Supported</span></td><td class="p-4"><span class="lang-th">รุ่นสุดท้ายที่มี Big Data Clusters</span><span class="lang-en hidden">Last version with Big Data Clusters</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">SQL Server 2017</td><td class="p-4">14.0</td><td class="p-4"><span class="ver-badge badge-yellow">Extended</span></td><td class="p-4"><span class="lang-th">เวอร์ชันแรกที่รองรับ Linux</span><span class="lang-en hidden">First version on Linux</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">SQL Server 2016</td><td class="p-4">13.0</td><td class="p-4"><span class="ver-badge badge-yellow">Extended</span></td><td class="p-4"><span class="lang-th">เริ่มมี Query Store</span><span class="lang-en hidden">Introduced Query Store</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">SQL Server 2014</td><td class="p-4">12.0</td><td class="p-4"><span class="ver-badge badge-red">End of Life</span></td><td class="p-4"><span class="lang-th">หมดระยะ Support (ก.ค. 2024)</span><span class="lang-en hidden">Out of support (July 2024)</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+             <!-- Windows Server -->
+            <section class="category-section">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-indigo-600 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">เวอร์ชัน Windows Server</span>
+                        <span class="lang-en hidden">Windows Server Versions</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <table class="w-full text-left border-collapse ver-table">
+                        <thead><tr class="bg-slate-50 text-slate-700">
+                            <th class="p-4"><span class="lang-th">รุ่น OS</span><span class="lang-en hidden">OS Version</span></th>
+                            <th class="p-4"><span class="lang-th">หมายเลข Build</span><span class="lang-en hidden">Build Base</span></th>
+                            <th class="p-4"><span class="lang-th">สถานะ</span><span class="lang-en hidden">Status</span></th>
+                            <th class="p-4"><span class="lang-th">จุดเด่น / ความเข้ากันได้</span><span class="lang-en hidden">Key Compatibility</span></th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Windows Server 2022</td><td class="p-4">20348</td><td class="p-4"><span class="ver-badge badge-green">Mainstream</span></td><td class="p-4"><span class="lang-th">รองรับ TLS 1.3 โดย default, ดีที่สุดสำหรับ SQL 2022</span><span class="lang-en hidden">Support TLS 1.3 by default. Best for SQL 2022.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Windows Server 2019</td><td class="p-4">17763</td><td class="p-4"><span class="ver-badge badge-green">Mainstream</span></td><td class="p-4"><span class="lang-th">เสถียร รองรับ App เก่าๆ ได้ดี</span><span class="lang-en hidden">Stable standard. Supports most legacy apps.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Windows Server 2016</td><td class="p-4">14393</td><td class="p-4"><span class="ver-badge badge-yellow">Extended</span></td><td class="p-4"><span class="lang-th">อัปเดตช้ากว่ารุ่นใหม่</span><span class="lang-en hidden">Slower Windows Update mechanism.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Windows Server 2012 R2</td><td class="p-4">9600</td><td class="p-4"><span class="ver-badge badge-red">End of Life</span></td><td class="p-4"><span class="lang-th">หมดอายุแล้ว (ต.ค. 2023) ความเสี่ยงสูง</span><span class="lang-en hidden">EOL Oct 2023. Risk of no security updates.</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MS Office -->
+            <section class="category-section">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-orange-500 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">ความเข้ากันได้ Microsoft Office</span>
+                        <span class="lang-en hidden">Microsoft Office Compatibility</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <table class="w-full text-left border-collapse ver-table">
+                        <thead><tr class="bg-slate-50 text-slate-700">
+                            <th class="p-4"><span class="lang-th">รุ่น Office</span><span class="lang-en hidden">Office Version</span></th>
+                            <th class="p-4"><span class="lang-th">เชื่อมต่อ O365</span><span class="lang-en hidden">O365 Connect</span></th>
+                            <th class="p-4"><span class="lang-th">สถานะ</span><span class="lang-en hidden">Status</span></th>
+                            <th class="p-4"><span class="lang-th">หมายเหตุ</span><span class="lang-en hidden">Note</span></th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Microsoft 365 (Apps)</td><td class="p-4 text-green-600 font-bold">Full Support</td><td class="p-4"><span class="ver-badge badge-green">Current</span></td><td class="p-4"><span class="lang-th">อัปเดตตลอดเวลา (Subscription)</span><span class="lang-en hidden">Always updated. Subscription based.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Office LTSC 2021</td><td class="p-4 text-green-600 font-bold">Supported</td><td class="p-4"><span class="ver-badge badge-green">Supported</span></td><td class="p-4"><span class="lang-th">เวอร์ชันซื้อขาด (Perpetual)</span><span class="lang-en hidden">Perpetual license version.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Office 2016/2019</td><td class="p-4 text-yellow-600 font-bold">Limited</td><td class="p-4"><span class="ver-badge badge-yellow">Extended</span></td><td class="p-4"><span class="lang-th">อาจมีปัญหากับ O365 Services</span><span class="lang-en hidden">Might have issues connecting to O365.</span></td></tr>
+                            <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Office 2013</td><td class="p-4 text-red-600 font-bold">Blocked</td><td class="p-4"><span class="ver-badge badge-red">End of Life</span></td><td class="p-4"><span class="lang-th">ไม่รองรับการเชื่อมต่อ O365</span><span class="lang-en hidden">Cannot connect to O365 services.</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+             <!-- Free vs Paid Section -->
+            <section class="category-section">
+                <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
+                    <div class="p-2 bg-emerald-600 rounded-lg text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">ของฟรี vs เสียเงิน (ข้อจำกัด)</span>
+                        <span class="lang-en hidden">Free vs. Paid Editions</span>
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <table class="w-full text-left border-collapse ver-table">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-700">
+                                <th class="p-4"><span class="lang-th">ซอฟต์แวร์</span><span class="lang-en hidden">Software</span></th>
+                                <th class="p-4"><span class="lang-th">รุ่นฟรี</span><span class="lang-en hidden">Free Edition</span></th>
+                                <th class="p-4"><span class="lang-th">ข้อจำกัดสำคัญ</span><span class="lang-en hidden">Limitations</span></th>
+                                <th class="p-4"><span class="lang-th">เหมาะสำหรับ</span><span class="lang-en hidden">Use Case</span></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-4 font-bold">SQL Server</td>
+                                <td class="p-4"><span class="ver-badge badge-green">Express</span></td>
+                                <td class="p-4 text-slate-600">
+                                    <span class="lang-th">ฐานข้อมูล Max 10GB, RAM 1.4GB, ไม่มี SQL Agent</span>
+                                    <span class="lang-en hidden">Max DB Size 10GB, RAM 1.4GB, 4 Cores, No SQL Agent</span>
+                                </td>
+                                <td class="p-4">Small Apps / Dev</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-4 font-bold">Windows Server</td>
+                                <td class="p-4"><span class="ver-badge badge-yellow">Evaluation</span></td>
+                                <td class="p-4 text-slate-600">
+                                    <span class="lang-th">ใช้ได้ 180 วัน, เครื่องดับเองเมื่อหมดอายุ</span>
+                                    <span class="lang-en hidden">180 days limit, Auto-shutdown when expired</span>
+                                </td>
+                                <td class="p-4">Testing / PoC</td>
+                            </tr>
+                             <tr class="hover:bg-slate-50">
+                                <td class="p-4 font-bold">Visual Studio</td>
+                                <td class="p-4"><span class="ver-badge badge-green">Community</span></td>
+                                <td class="p-4 text-slate-600">
+                                    <span class="lang-th">ห้ามใช้ในองค์กรขนาดใหญ่ (>250 PC)</span>
+                                    <span class="lang-en hidden">Not for Enterprise (>250 PCs or >$1M Revenue)</span>
+                                </td>
+                                <td class="p-4">Individual / Student</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
         <!-- TAB 4: TOOLS -->
         <div id="tools" class="tab-content hidden space-y-8">
             <section class="category-section" data-category="Basic Troubleshooting Tools">
                 <div class="flex items-center gap-3 mb-4 border-b pb-2 border-slate-300">
-                    <div class="p-2 bg-slate-700 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                    <h2 class="text-2xl font-bold text-slate-800">Basic Troubleshooting Tools (CMD)</h2>
+                    <div class="p-2 bg-slate-700 rounded-lg text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                    <h2 class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">เครื่องมือตรวจสอบพื้นฐาน (CMD)</span>
+                        <span class="lang-en hidden">Basic Troubleshooting Tools (CMD)</span>
+                    </h2>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider"><th class="p-4 w-1/4">Command</th><th class="p-4 w-1/3">Example</th><th class="p-4 w-1/3">Purpose</th></tr></thead>
-                            <tbody class="divide-y divide-slate-100 text-sm md:text-base search-target">
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Telnet</td><td class="p-4"><code class="cmd-box">telnet smtp.gmail.com 587</code></td><td class="p-4">เช็คว่า Port ปลายทางเปิดหรือไม่ (ถ้าจอดำ=ผ่าน)</td></tr>
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Test-NetConnection</td><td class="p-4"><code class="cmd-box">tnc 8.8.8.8 -port 53</code></td><td class="p-4">เหมือน Telnet แต่ใช้ใน PowerShell (ดู TcpTestSucceeded)</td></tr>
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Netstat</td><td class="p-4"><code class="cmd-box">netstat -ano | findstr :80</code></td><td class="p-4">เช็คว่าเครื่องเราเปิด Port อะไรอยู่ / ใครแย่ง Port</td></tr>
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Ping</td><td class="p-4"><code class="cmd-box">ping google.com</code></td><td class="p-4">เช็คว่า Server ปลายทางเปิดอยู่ไหม</td></tr>
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Check Firewall</td><td class="p-4"><span class="text-sm bg-gray-100 p-1 rounded">Turn off Firewall temporarily</span></td><td class="p-4">ปิด Firewall ชั่วคราวเพื่อเทสว่าโดนบล็อกไหม</td></tr>
-                                <tr class="hover:bg-slate-50"><td class="p-4 font-bold">Nslookup</td><td class="p-4"><code class="cmd-box">nslookup domain.com</code></td><td class="p-4">เช็ค DNS Resolution</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div id="tools-container">
+                    <!-- Tools content will be rendered here -->
                 </div>
             </section>
         </div>
 
     </main>
+    
+    <!-- Modal for Adding Entry (Updated to handle new schema) -->
+    <div id="addModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-slate-800">
+                        <span class="lang-th">เพิ่มข้อมูล Error ใหม่</span>
+                        <span class="lang-en hidden">Add New Error</span>
+                    </p>
+                    <div class="modal-close cursor-pointer z-50" onclick="toggleModal('addModal')">
+                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
+                    </div>
+                </div>
+                <form id="addErrorForm" onsubmit="handleAddNew(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                             <span class="lang-th">หมวดหมู่ (Category)</span><span class="lang-en hidden">Category</span>
+                        </label>
+                        <select id="newCategory" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="HTTP Status Codes">HTTP Status Codes</option>
+                            <option value="IIS & ASP.NET Application">IIS & ASP.NET Application</option>
+                            <option value="IIS Application Pool Strategy">IIS Application Pool Strategy</option>
+                            <option value="Browser & SSL/TLS">Browser & SSL/TLS</option>
+                            <option value="Libraries & MS Office">Libraries & MS Office</option>
+                            <option value="Identity (AD, Azure, IIS Auth)">Identity (AD, Azure, IIS Auth)</option>
+                            <option value="Database (SQL Server)">Database (SQL Server)</option>
+                            <option value="File System & Permissions">File System & Permissions</option>
+                            <option value="Storage & System Services">Storage & System Services</option>
+                            <option value="Network, Port & SMTP">Network, Port & SMTP</option>
+                            <option value="Email SMTP (Gmail/Outlook)">Email SMTP (Gmail/Outlook)</option>
+                            <option value="Printer & RPC">Printer & RPC</option>
+                             <option value="Log File Locations">Log File Locations</option>
+                            <option value="Connectivity Tricks">Connectivity Tricks</option>
+                            <option value="Performance Counters">Performance Counters</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <span class="lang-th">รหัส Error / ข้อความ</span><span class="lang-en hidden">Code / Message</span>
+                        </label>
+                        <input id="newCode" type="text" required class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <span class="lang-th">ความรับผิดชอบ</span><span class="lang-en hidden">Role</span>
+                        </label>
+                        <select id="newRole" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+                             <option value="SERVER ADMIN">SERVER ADMIN</option>
+                            <option value="APP DEVELOPER">APP DEVELOPER</option>
+                            <option value="SHARED">SHARED / BOTH</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <span class="lang-th">คำอธิบาย (ไทย)</span><span class="lang-en hidden">Description (TH)</span>
+                        </label>
+                        <textarea id="newDescTh" required class="shadow border rounded w-full py-2 px-3 text-gray-700" rows="2"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                             <span class="lang-th">คำอธิบาย (อังกฤษ)</span><span class="lang-en hidden">Description (EN)</span>
+                        </label>
+                        <textarea id="newDescEn" required class="shadow border rounded w-full py-2 px-3 text-gray-700" rows="2"></textarea>
+                    </div>
+                     <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                             <span class="lang-th">วิธีแก้ไข (ไทย)</span><span class="lang-en hidden">Solution (TH)</span>
+                        </label>
+                        <textarea id="newSolTh" required class="shadow border rounded w-full py-2 px-3 text-gray-700" rows="2"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <span class="lang-th">วิธีแก้ไข (อังกฤษ)</span><span class="lang-en hidden">Solution (EN)</span>
+                        </label>
+                        <textarea id="newSolEn" required class="shadow border rounded w-full py-2 px-3 text-gray-700" rows="2"></textarea>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
+                            <span class="lang-th">บันทึก</span><span class="lang-en hidden">Save</span>
+                        </button>
+                        <button type="button" onclick="toggleModal('addModal')" class="px-4 py-2 bg-transparent text-indigo-500 hover:text-indigo-400">
+                             <span class="lang-th">ยกเลิก</span><span class="lang-en hidden">Cancel</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for AI Analysis -->
+    <div id="aiModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-70"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <p class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <span>✨</span>
+                        <span class="lang-th">ผู้ช่วยวิเคราะห์ปัญหาอัจฉริยะ</span>
+                        <span class="lang-en hidden">AI Smart Troubleshooter</span>
+                    </p>
+                    <div class="modal-close cursor-pointer z-50" onclick="toggleModal('aiModal')">
+                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
+                    </div>
+                </div>
+                
+                <div class="py-4">
+                    <p class="mb-2 text-slate-600 text-sm">
+                        <span class="lang-th">วาง Error Log, Code, หรืออธิบายอาการที่คุณพบด้านล่าง AI จะช่วยหาสาเหตุและวิธีแก้ไขให้คุณ</span>
+                        <span class="lang-en hidden">Paste your Error Log, Code, or describe the symptoms below. AI will analyze the cause and suggest solutions.</span>
+                    </p>
+                    <textarea id="aiInput" class="w-full border-2 border-slate-300 rounded-lg p-3 h-32 focus:outline-none focus:border-violet-500 font-mono text-sm" placeholder="e.g., Error 500 when accessing /api/login, IIS logs show 'module not found'..."></textarea>
+                    
+                    <div class="flex justify-end mt-3">
+                         <button onclick="handleAiAnalyze()" class="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-lg shadow-md font-medium transition-all flex items-center gap-2">
+                             <span class="lang-th">วิเคราะห์ปัญหา</span><span class="lang-en hidden">Analyze Issue</span> ✨
+                         </button>
+                    </div>
+                </div>
+
+                <!-- AI Output Section -->
+                <div class="border-t border-gray-200 pt-4 mt-2">
+                    <div id="aiLoading" class="hidden flex flex-col items-center justify-center py-8">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600 mb-3"></div>
+                        <p class="text-violet-600 font-medium animate-pulse">
+                            <span class="lang-th">กำลังวิเคราะห์ข้อมูล...</span>
+                            <span class="lang-en hidden">Analyzing data...</span>
+                        </p>
+                    </div>
+                    
+                    <div id="aiOutput" class="hidden bg-slate-50 rounded-lg p-4 border border-slate-200 text-slate-700 text-sm leading-relaxed ai-response overflow-y-auto max-h-[40vh]">
+                        <!-- Results will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="bg-white border-t border-slate-200 py-8">
         <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
-            <p>&copy; 2025 Server Troubleshooting Guide (Pro Version). Powered by LocalStorage & SheetJS.</p>
+            <p>&copy; 2025 Server Troubleshooting Guide (Pro Version). Powered by LocalStorage & Gemini AI.</p>
         </div>
     </footer>
 
     <!-- MAIN SCRIPT -->
     <script>
-        // --- 1. INITIAL DATA (Default Data) ---
-        // Storing default data in JS allows easily appending new data from import.
+        // API Key for Gemini
+        const apiKey = ""; 
+
+        // --- 1. INITIAL DATA (Updated with EN/TH) ---
         const defaultData = [
             // HTTP Status
-            { cat: "HTTP Status Codes", code: "500", role: "APP DEVELOPER", desc: "Internal Server Error (Code Error)", sol: "ดู Log ไฟล์ / เปิด `customErrors=Off` เพื่อดู Stack Trace" },
-            { cat: "HTTP Status Codes", code: "503", role: "SERVER ADMIN", desc: "App Pool หยุดทำงาน หรือ Server Overload", sol: "Start App Pool ใน IIS / เช็ค RAM, CPU Server" },
-            { cat: "HTTP Status Codes", code: "403", role: "SERVER ADMIN", desc: "Forbidden (ไม่มีสิทธิ์เข้าถึง)", sol: "เพิ่มสิทธิ์ Read/List ให้ User `IIS_IUSRS` ที่โฟลเดอร์" },
-            { cat: "HTTP Status Codes", code: "404", role: "APP DEVELOPER", desc: "Not Found (ไม่พบไฟล์/URL)", sol: "เช็ค URL Routing, Config หรือไฟล์ว่ามีอยู่จริง" },
-            { cat: "HTTP Status Codes", code: "502", role: "SERVER ADMIN", desc: "Bad Gateway (Proxy Error)", sol: "เช็ค Service ปลายทางว่า Down หรือไม่ / Restart App Pool" },
-            
+            { cat: "HTTP Status Codes", code: "500", role: "APP DEVELOPER", desc_th: "ข้อผิดพลาดภายในเซิร์ฟเวอร์ (โค้ดทำงานผิดพลาด)", desc_en: "Internal Server Error (Code Error)", sol_th: "ดู Log ไฟล์ / เปิด `customErrors=Off` เพื่อดูรายละเอียด", sol_en: "Check Log file / Set `customErrors=Off`" },
+            { cat: "HTTP Status Codes", code: "503", role: "SERVER ADMIN", desc_th: "App Pool หยุดทำงาน หรือ Server รับโหลดไม่ไหว", desc_en: "App Pool Stopped or Server Overload", sol_th: "เริ่ม App Pool ใน IIS / ตรวจสอบ RAM, CPU ของ Server", sol_en: "Start App Pool / Check RAM, CPU" },
+            { cat: "HTTP Status Codes", code: "403", role: "SERVER ADMIN", desc_th: "ถูกห้ามเข้าถึง (Forbidden) ไม่มีสิทธิ์", desc_en: "Forbidden (Access Denied)", sol_th: "เพิ่มสิทธิ์ Read/List ให้ User `IIS_IUSRS` ที่โฟลเดอร์", sol_en: "Add Read/List permission for `IIS_IUSRS`" },
+            { cat: "HTTP Status Codes", code: "404", role: "APP DEVELOPER", desc_th: "ไม่พบข้อมูล (ไฟล์หรือ URL หาย)", desc_en: "Not Found (File/URL missing)", sol_th: "ตรวจสอบการเขียน URL, Config หรือดูว่าไฟล์มีอยู่จริงไหม", sol_en: "Check URL Routing or File existence" },
+            { cat: "HTTP Status Codes", code: "502", role: "SERVER ADMIN", desc_th: "เกตเวย์ผิดพลาด (Proxy Error)", desc_en: "Bad Gateway (Proxy Error)", sol_th: "ตรวจสอบ Service ปลายทางว่าทำงานอยู่ไหม / รีสตาร์ท App Pool", sol_en: "Check Backend Service / Restart App Pool" },
+
             // IIS
-            { cat: "IIS & ASP.NET Application", code: "Object reference not set...", role: "APP DEVELOPER", desc: "Code: Null Reference (ตัวแปรว่างเปล่า)", sol: "แก้ Code: เพิ่มเงื่อนไขเช็ค `!= null` ก่อนใช้" },
-            { cat: "IIS & ASP.NET Application", code: "System.IO.FileNotFound", role: "APP DEVELOPER", desc: "หาไฟล์ DLL/Config ไม่เจอ", sol: "เช็คไฟล์ใน `bin`, ตรวจสอบ Path ใน Config" },
-            { cat: "IIS & ASP.NET Application", code: "Configuration Errors", role: "APP DEVELOPER", desc: "Web.config เขียนผิดโครงสร้าง", sol: "แก้ Syntax XML ใน `web.config` ให้ถูกต้อง" },
-            { cat: "IIS & ASP.NET Application", code: "OutOfMemoryException", role: "SHARED", desc: "RAM ไม่พอ / Code Memory Leak", sol: "IISReset / หาจุด Memory Leak ใน Code / เพิ่ม RAM" },
-            { cat: "IIS & ASP.NET Application", code: "0x8007000B / Incorrect format", role: "SHARED", desc: "32-bit vs 64-bit ไม่ตรงกัน", sol: "IIS > AppPool > Advanced > Enable 32-Bit = True" },
-            { cat: "IIS & ASP.NET Application", code: "Maximum request length exceeded", role: "APP DEVELOPER", desc: "อัปโหลดไฟล์ใหญ่เกินกำหนด (4MB)", sol: "เพิ่ม `maxRequestLength` และ `maxAllowedContentLength` ใน Config" },
+            { cat: "IIS & ASP.NET Application", code: "Object reference not set...", role: "APP DEVELOPER", desc_th: "โค้ด: อ้างอิงถึงตัวแปรที่ว่างเปล่า (Null)", desc_en: "Code: Null Reference Exception", sol_th: "แก้โค้ด: เพิ่มการตรวจสอบ `!= null` ก่อนใช้งาน", sol_en: "Fix Code: Add `!= null` check" },
+            { cat: "IIS & ASP.NET Application", code: "System.IO.FileNotFound", role: "APP DEVELOPER", desc_th: "หาไฟล์ DLL หรือ Config ไม่เจอ", desc_en: "DLL/Config file not found", sol_th: "ตรวจสอบไฟล์ในโฟลเดอร์ `bin` และตรวจสอบ Path", sol_en: "Check files in `bin`, Verify Path" },
+            { cat: "IIS & ASP.NET Application", code: "Configuration Errors", role: "APP DEVELOPER", desc_th: "ไฟล์ Web.config เขียนผิดโครงสร้าง", desc_en: "Web.config syntax error", sol_th: "แก้ไขโครงสร้าง XML ใน `web.config` ให้ถูกต้อง", sol_en: "Fix XML Syntax in `web.config`" },
+            { cat: "IIS & ASP.NET Application", code: "OutOfMemoryException", role: "SHARED", desc_th: "แรมไม่พอ / โค้ดมีการใช้แรมแล้วไม่คืน", desc_en: "Out of RAM / Memory Leak", sol_th: "รีเซ็ต IIS / หาจุด Memory Leak ในโค้ด / เพิ่มแรม", sol_en: "IISReset / Fix Memory Leak / Add RAM" },
+            { cat: "IIS & ASP.NET Application", code: "0x8007000B", role: "SHARED", desc_th: "ความเข้ากันไม่ได้ระหว่าง 32-bit และ 64-bit", desc_en: "32-bit vs 64-bit mismatch", sol_th: "ใน IIS > เปิด Enable 32-Bit = True", sol_en: "IIS > Enable 32-Bit = True" },
+            { cat: "IIS & ASP.NET Application", code: "Max request length exceeded", role: "APP DEVELOPER", desc_th: "อัปโหลดไฟล์ขนาดใหญ่เกินกำหนด (4MB)", desc_en: "Upload size exceeded (4MB)", sol_th: "เพิ่มค่า `maxRequestLength` ในไฟล์ Config", sol_en: "Increase `maxRequestLength` in Config" },
+
+             // IIS App Pool Strategy
+            { cat: "IIS Application Pool Strategy", code: "503 App Pool Stopped", role: "SERVER ADMIN", desc_th: "App Pool หยุดทำงานเอง (แครช)", desc_en: "App Pool Auto-Stopped (Crash)", sol_th: "1. เริ่มใหม่ 2. ดู Event Viewer หาสาเหตุ", sol_en: "1. Start again 2. Check Event Viewer" },
+            { cat: "IIS Application Pool Strategy", code: "Identity Logon Failure", role: "SERVER ADMIN", desc_th: "รหัสผ่าน Identity เปลี่ยน หรือถูกล็อก", desc_en: "Identity Password Changed/Locked", sol_th: "อัปเดต User/Pass ใหม่ใน Advanced Settings", sol_en: "Update User/Pass in Advanced Settings" },
+            { cat: "IIS Application Pool Strategy", code: "Rapid Fail Protection", role: "APP DEVELOPER", desc_th: "ล่มเกิน 5 ครั้งใน 5 นาที", desc_en: "Crashed 5 times in 5 mins", sol_th: "แก้โค้ดที่ทำให้ระบบพังก่อน แล้วค่อยเริ่ม Pool ใหม่", sol_en: "Fix crashing code before Starting Pool" },
+            { cat: "IIS Application Pool Strategy", code: "Session Recycling", role: "SERVER ADMIN", desc_th: "Session หลุดบ่อย (ไม่ได้ใช้งาน 20 นาที)", desc_en: "Session lost (Idle 20min)", sol_th: "ตั้งค่า Idle Time-out = 0", sol_en: "Set Idle Time-out = 0" },
+            { cat: "IIS Application Pool Strategy", code: "High Memory (w3wp)", role: "SHARED", desc_th: "กินแรมไม่คืน (Memory Leak)", desc_en: "High Memory Usage (Leak)", sol_th: "ตั้งค่า Private Memory Limit ให้รีสตาร์ทอัตโนมัติ", sol_en: "Set Private Memory Limit to Recycle" },
+            { cat: "IIS Application Pool Strategy", code: "500.13 Server Too Busy", role: "SERVER ADMIN", desc_th: "คนเข้าใช้งานเยอะเกินคิวจะรับไหว", desc_en: "High Traffic / Queue Full", sol_th: "เพิ่มค่า Queue Length ใน Advanced Settings", sol_en: "Increase Queue Length" },
 
             // Browser SSL
-            { cat: "Browser & SSL/TLS", code: "Blocked by CORS policy", role: "SHARED", desc: "ติด Cross-Domain Security", sol: "Server: เพิ่ม Header `Access-Control-Allow-Origin`" },
-            { cat: "Browser & SSL/TLS", code: "Mixed Content", role: "APP DEVELOPER", desc: "HTTPS เรียกใช้ HTTP (ไม่ปลอดภัย)", sol: "แก้ Link (img/script) เป็น `https://` หรือ `//`" },
-            { cat: "Browser & SSL/TLS", code: "ERR_CERT_AUTHORITY_INVALID", role: "SERVER ADMIN", desc: "Certificate ไม่น่าเชื่อถือ / หมดอายุ", sol: "ต่ออายุ SSL / Install Root CA ลงเครื่อง Client (เฉพาะภายใน)" },
-            { cat: "Browser & SSL/TLS", code: "ERR_TOO_MANY_REDIRECTS", role: "APP DEVELOPER", desc: "Redirect วนลูปไม่รู้จบ", sol: "เช็ค Logic Redirect ใน Code / URL Rewrite Rule ใน IIS" },
+            { cat: "Browser & SSL/TLS", code: "Blocked by CORS policy", role: "SHARED", desc_th: "ติดระบบความปลอดภัยข้ามโดเมน", desc_en: "Cross-Domain Security Block", sol_th: "เพิ่ม Header Access-Control-Allow-Origin ที่ฝั่งเซิร์ฟเวอร์", sol_en: "Add Access-Control-Allow-Origin Header" },
+            { cat: "Browser & SSL/TLS", code: "Mixed Content", role: "APP DEVELOPER", desc_th: "หน้า HTTPS เรียกใช้ข้อมูล HTTP (ไม่ปลอดภัย)", desc_en: "HTTPS loading HTTP resources", sol_th: "แก้ลิงก์ให้เป็น `https://` หรือ `//`", sol_en: "Change links to `https://` or `//`" },
+            { cat: "Browser & SSL/TLS", code: "ERR_CERT_AUTHORITY_INVALID", role: "SERVER ADMIN", desc_th: "ใบรับรองไม่น่าเชื่อถือ / หมดอายุ", desc_en: "Certificate Invalid / Expired", sol_th: "ต่ออายุ SSL / ติดตั้ง Root CA", sol_en: "Renew SSL / Install Root CA" },
+            { cat: "Browser & SSL/TLS", code: "ERR_TOO_MANY_REDIRECTS", role: "APP DEVELOPER", desc_th: "มีการเปลี่ยนหน้าวนซ้ำไม่รู้จบ", desc_en: "Infinite Redirect Loop", sol_th: "ตรวจสอบ Logic การ Redirect / URL Rewrite", sol_en: "Check Redirect Logic / URL Rewrite" },
 
             // Libraries
-            { cat: "Libraries & MS Office", code: "DllNotFoundException", role: "SHARED", desc: "ขาดไฟล์ .dll ภายนอก", sol: "ลง VC++ Redistributable / ก๊อป DLL ลง `bin` หรือ `System32`" },
-            { cat: "Libraries & MS Office", code: "GDI+ Generic Error", role: "APP DEVELOPER", desc: "Memory Lock ในระบบรูปภาพ", sol: "แก้ Code: ใช้ `using` หรือ `.Dispose()` / ห้าม Save ทับทันที" },
-            { cat: "Libraries & MS Office", code: "Font not found / □□□", role: "SERVER ADMIN", desc: "Server ไม่มี Font ที่ระบุ", sol: "ลง Font ที่ Server > Restart Server" },
-            { cat: "Libraries & MS Office", code: "0x80040154 Class not registered", role: "SERVER ADMIN", desc: "ไม่มีโปรแกรม Office หรือ Bit ไม่ตรง", sol: "ลง MS Office / Access Runtime (x86/x64 ให้ตรงกัน)" },
-            { cat: "Libraries & MS Office", code: "0x80070005 Access is denied", role: "SERVER ADMIN", desc: "IIS User ไม่มีสิทธิ์เปิด Excel (DCOM)", sol: "`dcomcnfg` > Excel > Security > Add IIS User ให้สิทธิ์" },
-            { cat: "Libraries & MS Office", code: "Call was rejected by callee", role: "SHARED", desc: "Office ค้าง (Popup/Busy)", sol: "Task Manager > End Task Excel.exe / ใช้ OpenXML แทน" },
+            { cat: "Libraries & MS Office", code: "DllNotFoundException", role: "SHARED", desc_th: "หาไฟล์ .dll ภายนอกไม่เจอ", desc_en: "Missing external .dll", sol_th: "ลง VC++ Redist / ก๊อปปี้ DLL ลง bin", sol_en: "Install VC++ Redist / Copy DLL to bin" },
+            { cat: "Libraries & MS Office", code: "GDI+ Generic Error", role: "APP DEVELOPER", desc_th: "การล็อกหน่วยความจำในระบบกราฟิก", desc_en: "Memory Lock in Graphics", sol_th: "แก้โค้ด: ใช้ `using` หรือ `.Dispose()`", sol_en: "Fix Code: Use `using` or `.Dispose()`" },
+            { cat: "Libraries & MS Office", code: "Font not found", role: "SERVER ADMIN", desc_th: "เซิร์ฟเวอร์ไม่มีฟอนต์ที่ระบุ", desc_en: "Font missing on Server", sol_th: "ติดตั้งฟอนต์ลง Server > รีสตาร์ท", sol_en: "Install Font on Server > Restart" },
+            { cat: "Libraries & MS Office", code: "0x80040154 Class not registered", role: "SERVER ADMIN", desc_th: "ไม่มีโปรแกรม Office / Bit ไม่ตรง", desc_en: "Missing Office / Bit mismatch", sol_th: "ติดตั้ง Office / Access Runtime (x86/x64)", sol_en: "Install Office / Access Runtime (x86/x64)" },
+            { cat: "Libraries & MS Office", code: "0x80070005 Access is denied", role: "SERVER ADMIN", desc_th: "IIS User ไม่มีสิทธิ์เปิด Excel", desc_en: "IIS User cannot open Excel", sol_th: "ใช้ dcomcnfg > ให้สิทธิ์ IIS User", sol_en: "dcomcnfg > Grant permission to IIS User" },
+            { cat: "Libraries & MS Office", code: "Call was rejected by callee", role: "SHARED", desc_th: "โปรแกรม Office ค้าง (Popup/Busy)", desc_en: "Office App Hanging/Busy", sol_th: "Task Manager > End Task Excel.exe", sol_en: "Task Manager > End Task Excel.exe" },
 
-            // Identity
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "0x8009030C / SEC_E_LOGON_DENIED", role: "SERVER ADMIN", desc: "Account ถูก Lock หรือรหัสผิด", sol: "AD Users > ปลด Lock Account / Reset Password" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "Clock skew too great", role: "SERVER ADMIN", desc: "เวลา Server ไม่ตรงกับ AD (เกิน 5 นาที)", sol: "CMD: `w32tm /resync` ที่เครื่อง Server" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "LDAP: Server not operational", role: "SERVER ADMIN", desc: "ติดต่อ Domain Controller ไม่ได้", sol: "เช็ค DNS / Ping IP Domain Controller" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50011 Reply URL", role: "APP DEVELOPER", desc: "Azure Redirect URI ไม่ตรง", sol: "Azure Portal > Auth > เพิ่ม Redirect URI ให้ตรงกับ Code" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50076 MFA Required", role: "SHARED", desc: "ต้องใช้ MFA (ติด Policy)", sol: "App ต้องรองรับ OAuth2 / ปรับ Policy ยกเว้น MFA" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS70002 Secret expired", role: "APP DEVELOPER", desc: "Client Secret หมดอายุ", sol: "Azure Portal > Certs & Secrets > สร้างใหม่ > อัปเดต Config" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.1 Logon Failed", role: "SHARED", desc: "User/Pass ผิด หรือไม่มีสิทธิ์", sol: "เช็ค User/Pass ใน IIS / สิทธิ์ NTFS โฟลเดอร์" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.2 Config", role: "SERVER ADMIN", desc: "ไม่ได้เปิด Auth Method (Anon/Win)", sol: "IIS > Authentication > Enable Anonymous/Windows" },
-            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401 Challenge Loop", role: "SERVER ADMIN", desc: "NTLM Loopback Check (เทสบนเครื่อง)", sol: "RegEdit: เพิ่ม `DisableLoopbackCheck` = 1" },
+             // Identity
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "0x8009030C", role: "SERVER ADMIN", desc_th: "บัญชีถูกล็อก หรือ รหัสผ่านผิด", desc_en: "Account Locked / Wrong Password", sol_th: "ปลดล็อกใน AD / รีเซ็ตรหัสผ่าน", sol_en: "Unlock in AD / Reset Password" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "Clock skew too great", role: "SERVER ADMIN", desc_th: "เวลาของ Server ไม่ตรงกับ AD", desc_en: "Server time mismatch with AD", sol_th: "CMD: `w32tm /resync`", sol_en: "CMD: `w32tm /resync`" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "LDAP: Server not operational", role: "SERVER ADMIN", desc_th: "ติดต่อ Domain Controller ไม่ได้", desc_en: "Cannot contact Domain Controller", sol_th: "เช็ค DNS / Ping DC", sol_en: "Check DNS / Ping DC" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50011 Reply URL", role: "APP DEVELOPER", desc_th: "Azure Redirect URI ไม่ตรงกัน", desc_en: "Azure Redirect URI mismatch", sol_th: "แก้ URI ใน Azure Portal ให้ตรงกับโค้ด", sol_en: "Fix URI in Azure Portal to match Code" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS50076 MFA Required", role: "SHARED", desc_th: "ต้องยืนยันตัวตน MFA (ติด Policy)", desc_en: "MFA Required (Policy)", sol_th: "ปรับแอปให้รองรับ OAuth2", sol_en: "Update App to support OAuth2" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "AADSTS70002 Secret expired", role: "APP DEVELOPER", desc_th: "Client Secret หมดอายุ", desc_en: "Client Secret Expired", sol_th: "สร้าง Secret ใหม่ใน Azure Portal", sol_en: "Azure Portal > Create New Secret" },
+            { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.1 Logon Failed", role: "SHARED", desc_th: "User/Pass ผิด หรือไม่มีสิทธิ์", desc_en: "Wrong User/Pass or No Permission", sol_th: "ตรวจสอบ User/Pass, NTFS Permission", sol_en: "Check User/Pass, NTFS Permission" },
+             { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401.2 Config", role: "SERVER ADMIN", desc_th: "ไม่ได้เปิดวิธีการยืนยันตัวตน", desc_en: "Auth Method Disabled", sol_th: "IIS > เปิด Anonymous/Windows Auth", sol_en: "IIS > Enable Anonymous/Windows Auth" },
+             { cat: "Identity (AD, Azure, IIS Auth)", code: "HTTP 401 Challenge Loop", role: "SERVER ADMIN", desc_th: "ติด NTLM Loopback Check", desc_en: "NTLM Loopback Check", sol_th: "RegEdit: ตั้งค่า `DisableLoopbackCheck`=1", sol_en: "RegEdit: `DisableLoopbackCheck`=1" },
 
             // Database
-            { cat: "Database (SQL Server)", code: "Error: 26 (Network Interfaces)", role: "SERVER ADMIN", desc: "หา Database Server ไม่เจอ", sol: "เช็ค Service SQL, เช็ค IP/Firewall" },
-            { cat: "Database (SQL Server)", code: "Login failed for user...", role: "APP DEVELOPER", desc: "User/Pass DB ผิด", sol: "แก้ Connection String ใน Web.config" },
-            { cat: "Database (SQL Server)", code: "Timeout expired", role: "SHARED", desc: "Query นานเกินกำหนด", sol: "Tuning SQL Query / ทำ Index" },
-            { cat: "Database (SQL Server)", code: "Deadlock found", role: "APP DEVELOPER", desc: "แย่งกันใช้ข้อมูล (Process ชนกัน)", sol: "ใช้ `WITH (NOLOCK)` หรือจัดลำดับ Query" },
-            { cat: "Database (SQL Server)", code: "Transaction log is full", role: "SERVER ADMIN", desc: "ไฟล์ Log (.ldf) เต็ม", sol: "Backup Log / Shrink File" },
-            { cat: "Database (SQL Server)", code: "Conflict with FOREIGN KEY", role: "APP DEVELOPER", desc: "ข้อมูลขัดแย้ง (Relation ผิด)", sol: "เช็ค ID ในตารางหลักว่ามีอยู่จริงก่อน Insert" },
+            { cat: "Database (SQL Server)", code: "Error: 26", role: "SERVER ADMIN", desc_th: "หา Database Server ไม่เจอ", desc_en: "Cannot locate Database Server", sol_th: "เช็ค Service SQL, IP, Firewall", sol_en: "Check SQL Service, IP, Firewall" },
+            { cat: "Database (SQL Server)", code: "Login failed for user...", role: "APP DEVELOPER", desc_th: "User/Pass ของ DB ผิด", desc_en: "Wrong DB User/Pass", sol_th: "แก้ไข Connection String", sol_en: "Fix Connection String" },
+            { cat: "Database (SQL Server)", code: "Timeout expired", role: "SHARED", desc_th: "Query ทำงานนานเกินกำหนด", desc_en: "Query Timeout", sol_th: "ปรับแต่ง SQL / ทำ Index", sol_en: "Tuning SQL / Create Index" },
+            { cat: "Database (SQL Server)", code: "Deadlock found", role: "APP DEVELOPER", desc_th: "แย่งกันใช้ข้อมูล (Process ชนกัน)", desc_en: "Deadlock (Process conflict)", sol_th: "ใช้ WITH (NOLOCK) / เรียงลำดับ Query ใหม่", sol_en: "Use WITH (NOLOCK) / Order Query" },
+            { cat: "Database (SQL Server)", code: "Transaction log is full", role: "SERVER ADMIN", desc_th: "ไฟล์ Log (.ldf) เต็ม", desc_en: "Log file (.ldf) full", sol_th: "Backup Log / Shrink File", sol_en: "Backup Log / Shrink File" },
+            { cat: "Database (SQL Server)", code: "Msg 3154 (Restore failed)", role: "SERVER ADMIN", desc_th: "Restore ทับ DB เดิมไม่ได้", desc_en: "Cannot overwrite existing DB", sol_th: "ใช้คำสั่ง WITH REPLACE", sol_en: "Use WITH REPLACE" },
+            { cat: "Database (SQL Server)", code: "Database State: SUSPECT", role: "SERVER ADMIN", desc_th: "DB เสียหาย (ไฟดับ/Disk พัง)", desc_en: "DB Corrupted (Power loss/Disk fail)", sol_th: "โหมดฉุกเฉิน > DBCC CHECKDB", sol_en: "Emergency Mode > DBCC CHECKDB" },
+             { cat: "Database (SQL Server)", code: "Conflict with FOREIGN KEY", role: "APP DEVELOPER", desc_th: "ข้อมูลขัดแย้ง (Relation ผิด)", desc_en: "Foreign Key Conflict", sol_th: "เช็ค ID ในตารางหลักว่ามีอยู่จริง", sol_en: "Check ID existence in Master table" },
+             { cat: "Database (SQL Server)", code: "Msg 3013 (Backup Corrupted)", role: "SERVER ADMIN", desc_th: "ไฟล์ Backup เสียหาย", desc_en: "Backup File Corrupted", sol_th: "ใช้ RESTORE VERIFYONLY เพื่อเช็ค", sol_en: "Use RESTORE VERIFYONLY to check" },
 
             // Files
-            { cat: "File System & Permissions", code: "Access to path denied", role: "SERVER ADMIN", desc: "IIS User ไม่มีสิทธิ์เขียนไฟล์", sol: "Properties > Security > Add `IIS AppPool\\Name` (Modify)" },
-            { cat: "File System & Permissions", code: "Access Denied (Full Control)", role: "SERVER ADMIN", desc: "ให้สิทธิ์แล้วยังไม่ได้ (ติด Deny/Owner)", sol: "เช็ค Deny Rule / Take Ownership เป็น Admin" },
-            { cat: "File System & Permissions", code: "File in use", role: "SHARED", desc: "ไฟล์ถูกล็อกโดยโปรแกรมอื่น", sol: "ใช้ Resource Monitor หา Handle > End Process" },
-            { cat: "File System & Permissions", code: "Path too long", role: "APP DEVELOPER", desc: "ชื่อไฟล์ยาวเกิน 260 ตัวอักษร", sol: "ย้ายไฟล์ให้ Path สั้นลง / เปิด LongPath" },
+            { cat: "File System & Permissions", code: "Access to path denied", role: "SERVER ADMIN", desc_th: "IIS User ไม่มีสิทธิ์เขียนไฟล์", desc_en: "IIS User no write permission", sol_th: "เพิ่มสิทธิ์ให้ `IIS AppPool\\Name`", sol_en: "Add Permission `IIS AppPool\\Name`" },
+            { cat: "File System & Permissions", code: "File in use", role: "SHARED", desc_th: "ไฟล์ถูกล็อกโดยโปรแกรมอื่น", desc_en: "File locked by another process", sol_th: "ใช้ Resource Monitor หาตัวล็อก", sol_en: "Use Resource Monitor to find lock" },
+            { cat: "File System & Permissions", code: "Path too long", role: "APP DEVELOPER", desc_th: "ชื่อไฟล์ยาวเกิน 260 ตัวอักษร", desc_en: "Path exceeds 260 chars", sol_th: "ย้ายไฟล์ / เปิด LongPath", sol_en: "Move file / Enable LongPath" },
+             { cat: "File System & Permissions", code: "Access Denied (Full Control)", role: "SERVER ADMIN", desc_th: "ให้สิทธิ์แล้วยังเข้าไม่ได้", desc_en: "Access Denied despite permissions", sol_th: "เช็ค Deny Rule / เปลี่ยนเจ้าของไฟล์ (Owner)", sol_en: "Check Deny Rule / Take Ownership" },
 
             // Storage
-            { cat: "Storage & System Services", code: "Not enough space on disk", role: "SERVER ADMIN", desc: "Disk เต็ม (Web/DB หยุดทำงาน)", sol: "ลบไฟล์ขยะ Temp / IIS Logs" },
-            { cat: "Storage & System Services", code: "Service failed to start", role: "SERVER ADMIN", desc: "Service เริ่มไม่ได้ (Dependency ตาย)", sol: "ดู Event Viewer และ Start Service แม่" },
-            { cat: "Storage & System Services", code: "Task Scheduler Error", role: "SHARED", desc: "Task รันไม่ผ่าน / Script พัง", sol: "เช็ค `Start in` (Path) / ติ๊ก `Run with highest privileges`" },
-
+            { cat: "Storage & System Services", code: "Not enough space", role: "SERVER ADMIN", desc_th: "ดิสก์เต็ม", desc_en: "Disk Full", sol_th: "ลบไฟล์ขยะ Temp / IIS Logs", sol_en: "Clear Temp / IIS Logs" },
+            { cat: "Storage & System Services", code: "Service failed to start", role: "SERVER ADMIN", desc_th: "Service เริ่มไม่ได้ (Dependency ตาย)", desc_en: "Service start failed (Dependency)", sol_th: "เริ่ม Service ตัวแม่ก่อน", sol_en: "Start Dependency Service first" },
+            { cat: "Storage & System Services", code: "Windows Update Failed", role: "SERVER ADMIN", desc_th: "อัปเดตค้าง/พัง", desc_en: "Update Stuck/Failed", sol_th: "ลบโฟลเดอร์ SoftwareDistribution", sol_en: "Delete SoftwareDistribution folder" },
+             { cat: "Storage & System Services", code: "Task Scheduler Error", role: "SHARED", desc_th: "Task รันไม่ผ่าน", desc_en: "Task Failed", sol_th: "เช็ค Path / Run with highest privileges", sol_en: "Check Start In Path / Run with highest privileges" },
+             { cat: "Storage & System Services", code: "Server Boot Loop", role: "SERVER ADMIN", desc_th: "ค้างหน้า Boot หลังอัปเดต", desc_en: "Boot Loop after Update", sol_th: "Safe Mode > DISM RevertPendingActions", sol_en: "Safe Mode > DISM RevertPendingActions" },
+            
             // Network
-            { cat: "Network, Port & SMTP", code: "Connection Refused", role: "SERVER ADMIN", desc: "Service ปลายทางไม่เปิด", sol: "Start Service ปลายทาง / เช็ค IP Port" },
-            { cat: "Network, Port & SMTP", code: "Port 80/443 in use", role: "SERVER ADMIN", desc: "Port ชน (Skype/VMWare แย่ง)", sol: "CMD: `netstat -ano | findstr :Port` > Kill PID" },
-            { cat: "Network, Port & SMTP", code: "DNS_PROBE...NXDOMAIN", role: "SERVER ADMIN", desc: "หา Domain ไม่เจอ", sol: "เช็ค IP DNS Server / `ipconfig /flushdns`" },
-            { cat: "Network, Port & SMTP", code: "Request Timed Out", role: "SERVER ADMIN", desc: "เน็ตหลุด / Firewall บล็อก", sol: "เช็คสาย LAN / VPN / Windows Firewall" },
-
+            { cat: "Network, Port & SMTP", code: "Connection Refused", role: "SERVER ADMIN", desc_th: "Service ปลายทางไม่เปิด", desc_en: "Dest Service not running", sol_th: "Start Service ปลายทาง", sol_en: "Start Destination Service" },
+            { cat: "Network, Port & SMTP", code: "Port 80/443 in use", role: "SERVER ADMIN", desc_th: "Port ชน (Skype/VMWare)", desc_en: "Port Conflict (Skype/VMWare)", sol_th: "Netstat หา PID > ปิดโปรแกรม", sol_en: "Netstat find PID > Kill Process" },
+            { cat: "Network, Port & SMTP", code: "DNS_PROBE...NXDOMAIN", role: "SERVER ADMIN", desc_th: "หา Domain ไม่เจอ", desc_en: "Domain not found", sol_th: "เช็ค IP DNS Server", sol_en: "Check DNS Server IP" },
+            { cat: "Network, Port & SMTP", code: "Request Timed Out", role: "SERVER ADMIN", desc_th: "เน็ตหลุด / Firewall บล็อก", desc_en: "Request Timed Out / Firewall", sol_th: "เช็คสาย LAN / VPN / Firewall", sol_en: "Check LAN / VPN / Firewall" },
+            
             // Email
-            { cat: "Email SMTP (Gmail/Outlook)", code: "5.5.1 Auth Required (Gmail)", role: "APP DEVELOPER", desc: "Gmail บล็อกรหัสผ่านปกติ", sol: "เปิด 2FA Gmail > สร้าง <strong>App Password</strong> ใส่แทน Pass เดิม" },
-            { cat: "Email SMTP (Gmail/Outlook)", code: "Connection Timed Out (Port 25)", role: "SERVER ADMIN", desc: "ISP/Firewall บล็อก Port 25", sol: "เปลี่ยน Port เป็น 587 (TLS) หรือ 465 (SSL)" },
-            { cat: "Email SMTP (Gmail/Outlook)", code: "5.7.57 Client not auth (Outlook)", role: "SHARED", desc: "O365 ปิด SMTP Auth", sol: "Admin Center > User > Mail > Manage email apps > ติ๊ก Authenticated SMTP" },
-            { cat: "Email SMTP (Gmail/Outlook)", code: "SendAsDenied", role: "APP DEVELOPER", desc: "User กับ Email From ไม่ตรงกัน", sol: "แก้ Email 'From' ให้ตรงกับ User ที่ Login" },
-            { cat: "Email SMTP (Gmail/Outlook)", code: "Relay Access Denied", role: "SERVER ADMIN", desc: "Server ไม่รู้จัก IP เรา", sol: "แจ้ง Mail Admin ให้ Whitelist IP Server นี้" },
-            { cat: "Email SMTP (Gmail/Outlook)", code: "Certificate Validation Failed", role: "SHARED", desc: "SSL หมดอายุ / Self-signed", sol: "ต่ออายุ SSL / Dev: `ServerCertificateValidationCallback` (Test Only)" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "5.5.1 Auth Required", role: "APP DEVELOPER", desc_th: "Gmail บล็อกรหัสผ่านปกติ", desc_en: "Gmail blocks basic auth", sol_th: "ใช้ App Password", sol_en: "Use App Password" },
+            { cat: "Email SMTP (Gmail/Outlook)", code: "Relay Access Denied", role: "SERVER ADMIN", desc_th: "Server ไม่รู้จัก IP เรา", desc_en: "Server denies our IP", sol_th: "เพิ่ม IP เข้า Whitelist", sol_en: "Add IP to Whitelist" },
+             { cat: "Email SMTP (Gmail/Outlook)", code: "Connection Timed Out", role: "SERVER ADMIN", desc_th: "Port 25 โดนบล็อก", desc_en: "Port 25 Blocked", sol_th: "ใช้ Port 587 (TLS)", sol_en: "Use Port 587 (TLS)" },
+             { cat: "Email SMTP (Gmail/Outlook)", code: "5.7.57 Client not auth", role: "SHARED", desc_th: "O365 ปิด SMTP Auth", desc_en: "O365 SMTP Auth Disabled", sol_th: "เปิด Authenticated SMTP ใน Admin Center", sol_en: "Enable Authenticated SMTP in Admin Center" },
+             { cat: "Email SMTP (Gmail/Outlook)", code: "SendAsDenied", role: "APP DEVELOPER", desc_th: "User กับ Email From ไม่ตรงกัน", desc_en: "User/From Mismatch", sol_th: "แก้ Email From ให้ตรง Login", sol_en: "Match From Email with Login" },
+             { cat: "Email SMTP (Gmail/Outlook)", code: "Certificate Validation Failed", role: "SHARED", desc_th: "SSL หมดอายุ / Self-signed", desc_en: "SSL Expired / Self-signed", sol_th: "ต่ออายุ SSL / ข้าม Check (เฉพาะ Dev)", sol_en: "Renew SSL / Skip Check (Dev)" },
+            
+             // Printer
+            { cat: "Printer & RPC", code: "RPC Server unavailable", role: "SERVER ADMIN", desc_th: "ติดต่อ Service ปลายทางไม่ได้", desc_en: "Cannot contact dest service", sol_th: "Start Print Spooler / เปิด Port 135", sol_en: "Start Print Spooler / Open Port 135" },
+            { cat: "Printer & RPC", code: "0x0000011b", role: "SERVER ADMIN", desc_th: "Win Update บล็อก Printer", desc_en: "Update blocks Printer", sol_th: "แก้ Registry RpcAuthn...", sol_en: "Fix Registry RpcAuthn..." },
+             { cat: "Printer & RPC", code: "0x800706D9 Endpoint Mapper", role: "SERVER ADMIN", desc_th: "Win Firewall Service ปิดอยู่", desc_en: "Win Firewall Service Disabled", sol_th: "Start Windows Firewall Service", sol_en: "Start Windows Firewall Service" },
+             { cat: "Printer & RPC", code: "0x80070035 Network Path Not Found", role: "SERVER ADMIN", desc_th: "หาเครื่องไม่เจอ / SMB ปิด", desc_en: "Host not found / SMB off", sol_th: "เปิด SMB / Ping ชื่อเครื่อง", sol_en: "Enable SMB / Ping Hostname" },
+             { cat: "Printer & RPC", code: "0x80070005 Access is denied", role: "SERVER ADMIN", desc_th: "DCOM Permission ไม่พอ", desc_en: "Insufficient DCOM Permission", sol_th: "Dcomcnfg > COM Security > Edit Limits", sol_en: "Dcomcnfg > COM Security > Edit Limits" },
+             { cat: "Printer & RPC", code: "0x800706BE RPC Call Failed", role: "SERVER ADMIN", desc_th: "Service ปลายทาง Crash", desc_en: "Dest Service Crashed", sol_th: "Restart Spooler / ลบ Driver", sol_en: "Restart Spooler / Remove Driver" },
+             { cat: "Printer & RPC", code: "0x80070721 Security Package", role: "SERVER ADMIN", desc_th: "เวลา (Time) ไม่ตรงกัน", desc_en: "Time sync issue", sol_th: "Sync เวลาให้ตรงกัน", sol_en: "Sync Server Time" },
+             { cat: "Printer & RPC", code: "0x00000709", role: "SERVER ADMIN", desc_th: "Win 11 หา Printer ไม่เจอ", desc_en: "Win 11 Printer Issue", sol_th: "RegEdit: LegacyDefaultPrinterMode", sol_en: "RegEdit: LegacyDefaultPrinterMode" },
+             { cat: "Printer & RPC", code: "Driver unavailable", role: "SERVER ADMIN", desc_th: "Driver V4 มีปัญหา", desc_en: "Driver V4 Issue", sol_th: "ใช้ Driver Type 3 (PCL6)", sol_en: "Use Driver Type 3 (PCL6)" },
 
-            // Printer
-            { cat: "Printer & RPC", code: "RPC Server unavailable (0x800706BA)", role: "SERVER ADMIN", desc: "ติดต่อ Service ปลายทางไม่ได้", sol: "Start Print Spooler / เปิด Port 135,445" },
-            { cat: "Printer & RPC", code: "0x800706D9 Endpoint Mapper", role: "SERVER ADMIN", desc: "Win Firewall Service ปิดอยู่", sol: "Start Service `Windows Defender Firewall` (ต้องเปิด)" },
-            { cat: "Printer & RPC", code: "0x80070035 Network Path Not Found", role: "SERVER ADMIN", desc: "หาเครื่องไม่เจอ / SMB ปิด", sol: "เปิด SMB / เช็ค IP ปลายทาง / `ping` ชื่อเครื่อง" },
-            { cat: "Printer & RPC", code: "0x80070005 Access is denied (RPC)", role: "SERVER ADMIN", desc: "DCOM Permission ไม่พอ", sol: "Dcomcnfg > My Computer > COM Security > Edit Limits" },
-            { cat: "Printer & RPC", code: "0x800706BE RPC Call Failed", role: "SERVER ADMIN", desc: "Service ปลายทาง Crash", sol: "Restart Spooler / เช็ค Driver" },
-            { cat: "Printer & RPC", code: "0x80070721 Security Package", role: "SERVER ADMIN", desc: "เวลา (Time) ไม่ตรงกัน", sol: "ตั้งเวลา Server ให้ตรงกัน (ห่างไม่เกิน 5 นาที)" },
-            { cat: "Printer & RPC", code: "0x0000011b (Security Update)", role: "SERVER ADMIN", desc: "Win Update บล็อก Printer", sol: "RegEdit: `RpcAuthnLevelPrivacyEnabled` = 0 (Restart Spooler)" },
-            { cat: "Printer & RPC", code: "0x00000709 (Check printer name)", role: "SERVER ADMIN", desc: "Win 11 หา Printer ไม่เจอ", sol: "RegEdit: ลบ Printer เก่า / `LegacyDefaultPrinterMode`" },
-            { cat: "Printer & RPC", code: "Driver unavailable / Type 4", role: "SERVER ADMIN", desc: "Driver V4 แชร์ข้าม OS ยาก", sol: "เปลี่ยน Driver บน Server เป็น Type 3 (PCL6)" }
+            // NEW: Log File Locations
+            { cat: "Log File Locations", code: "IIS Access Logs", role: "SERVER ADMIN", desc_th: "บันทึกการเข้าชมเว็บ (Status Code)", desc_en: "Web Access Logs (Status Codes)", sol_th: "C:\\inetpub\\logs\\LogFiles\\W3SVC1", sol_en: "C:\\inetpub\\logs\\LogFiles\\W3SVC1" },
+            { cat: "Log File Locations", code: "HTTP Error Logs", role: "SERVER ADMIN", desc_th: "Error ระดับ Kernel (เช่น 503)", desc_en: "Kernel Level Errors (e.g. 503)", sol_th: "C:\\Windows\\System32\\LogFiles\\HTTPERR", sol_en: "C:\\Windows\\System32\\LogFiles\\HTTPERR" },
+            { cat: "Log File Locations", code: "SQL Server Logs", role: "SERVER ADMIN", desc_th: "บันทึกข้อผิดพลาด Database", desc_en: "Database Error Logs", sol_th: "C:\\Program Files\\Microsoft SQL Server\\MSSQL...\\Log", sol_en: "C:\\Program Files\\Microsoft SQL Server\\MSSQL...\\Log" },
+            { cat: "Log File Locations", code: "Windows Event Viewer", role: "SERVER ADMIN", desc_th: "บันทึกระบบและแอปพลิเคชัน", desc_en: "System & Application Logs", sol_th: "Start > Run > eventvwr.msc", sol_en: "Start > Run > eventvwr.msc" },
+
+            // NEW: Connectivity Tricks
+            { cat: "Connectivity Tricks", code: "UDL Test", role: "SHARED", desc_th: "ทดสอบต่อ DB โดยไม่ต้องใช้ Code", desc_en: "Test DB connection without Code", sol_th: "สร้างไฟล์ .txt เปลี่ยนนามสกุลเป็น .udl > ดับเบิ้ลคลิก", sol_en: "Create .txt file, rename to .udl > Double click" },
+            { cat: "Connectivity Tricks", code: "PowerShell Test-NetConnection", role: "SERVER ADMIN", desc_th: "เช็ค Port ปลายทาง (ดีกว่า Telnet)", desc_en: "Check Port (Better than Telnet)", sol_th: "tnc [IP] -port [Port]", sol_en: "tnc [IP] -port [Port]" },
+
+            // NEW: Performance Counters
+            { cat: "Performance Counters", code: "Processor Time (%)", role: "SERVER ADMIN", desc_th: "การทำงานของ CPU ทั้งระบบ", desc_en: "Total CPU Usage", sol_th: "ถ้าเกิน 80% ต่อเนื่อง = Overload", sol_en: "If > 80% sustained = Overload" },
+            { cat: "Performance Counters", code: "Memory\\Available MBytes", role: "SERVER ADMIN", desc_th: "แรมที่เหลืออยู่", desc_en: "Available RAM", sol_th: "ถ้าน้อยกว่า 5% ต้องเพิ่มแรม", sol_en: "If < 5% = Add RAM" },
+            { cat: "Performance Counters", code: "ASP.NET\\Requests Queued", role: "SERVER ADMIN", desc_th: "คิวที่รอการประมวลผล", desc_en: "Requests waiting in queue", sol_th: "ถ้าค่าสูง แสดงว่ารับ Request ไม่ทัน", sol_en: "High value = Bottleneck" }
+        ];
+        
+        // Tools Data
+        const toolsData = [
+            { cmd: "Telnet", ex: "telnet smtp.gmail.com 587", desc_th: "เช็คว่า Port ปลายทางเปิดอยู่หรือไม่", desc_en: "Check if remote Port is open" },
+            { cmd: "Test-NetConnection", ex: "tnc 8.8.8.8 -port 53", desc_th: "เหมือน Telnet แต่ใช้ใน PowerShell (ละเอียดกว่า)", desc_en: "Telnet alternative for PowerShell (More details)" },
+            { cmd: "Netstat", ex: "netstat -ano | findstr :80", desc_th: "ดูว่ามีโปรแกรมอะไรเปิด Port รอรับอยู่ในเครื่อง", desc_en: "Check local listening ports & PID" },
+            { cmd: "Ping", ex: "ping google.com", desc_th: "เช็คว่า Server ปลายทางยังทำงานอยู่หรือไม่", desc_en: "Check if Server is online/reachable" },
+            { cmd: "Check Firewall", ex: "Turn off temporarily", desc_th: "ปิด Firewall ชั่วคราวเพื่อแยกแยะปัญหา", desc_en: "Disable Firewall temporarily to isolate issue" }
         ];
 
+        let currentLang = 'th';
+
         // --- 2. LOGIC: RENDER & STORAGE ---
+        
+        // Header Mapping
+        const tableHeaderMap = {
+            "Error / Message": { th: "ข้อผิดพลาด / ข้อความ", en: "Error / Message" },
+            "Responsibility": { th: "ความรับผิดชอบ", en: "Responsibility" },
+            "Description": { th: "คำอธิบาย / อาการ", en: "Description / Symptom" },
+            "Solution": { th: "วิธีแก้ไข", en: "Solution" },
+            "Error": { th: "ข้อผิดพลาด", en: "Error" },
+            "Role": { th: "บทบาท", en: "Role" },
+            "Code": { th: "รหัส", en: "Code" },
+            "Command": { th: "คำสั่ง", en: "Command" },
+            "Example": { th: "ตัวอย่าง", en: "Example" },
+            "Purpose": { th: "วัตถุประสงค์", en: "Purpose" },
+            "Error / Symptom": { th: "ข้อผิดพลาด / อาการ", en: "Error / Symptom" },
+            "Counter Name": { th: "ชื่อตัวชี้วัด", en: "Counter Name" },
+            "Threshold (ค่าวิกฤต)": { th: "ค่าวิกฤต (Threshold)", en: "Threshold" },
+            "Technique": { th: "เทคนิค", en: "Technique" },
+            "How-to": { th: "วิธีทำ", en: "How-to" },
+            "Log Type": { th: "ประเภท Log", en: "Log Type" },
+            "Path / Location": { th: "ที่อยู่ไฟล์ (Path)", en: "Path / Location" }
+        };
 
         const roleColors = {
             "SERVER ADMIN": "bg-purple-100 text-purple-700",
@@ -430,6 +896,7 @@
         const catMap = {
             "HTTP Status Codes": "tbody-http",
             "IIS & ASP.NET Application": "tbody-iis",
+            "IIS Application Pool Strategy": "tbody-apppool",
             "Browser & SSL/TLS": "tbody-browser",
             "Libraries & MS Office": "tbody-lib",
             "Identity (AD, Azure, IIS Auth)": "tbody-identity",
@@ -438,7 +905,30 @@
             "Storage & System Services": "tbody-storage",
             "Network, Port & SMTP": "tbody-network",
             "Email SMTP (Gmail/Outlook)": "tbody-email",
-            "Printer & RPC": "tbody-printer"
+            "Printer & RPC": "tbody-printer",
+            "Log File Locations": "tbody-logfiles",
+            "Connectivity Tricks": "tbody-connectivity",
+            "Performance Counters": "tbody-perf"
+        };
+        
+        // Category Headers Translation
+        const categoryTitles = {
+            "HTTP Status Codes": { th: "รหัสสถานะ HTTP (HTTP Status Codes)", en: "HTTP Status Codes" },
+            "IIS & ASP.NET Application": { th: "แอปพลิเคชัน IIS & ASP.NET", en: "IIS & ASP.NET Application" },
+            "IIS Application Pool Strategy": { th: "กลยุทธ์จัดการ IIS App Pool", en: "IIS Application Pool Strategy" },
+            "Browser & SSL/TLS": { th: "เบราว์เซอร์ & SSL/TLS", en: "Browser & SSL/TLS" },
+            "Libraries & MS Office": { th: "ไลบรารี & MS Office", en: "Libraries & MS Office" },
+            "Identity (AD, Azure, IIS Auth)": { th: "การยืนยันตัวตน (AD, Azure, IIS)", en: "Identity (AD, Azure, IIS Auth)" },
+            "Database (SQL Server)": { th: "ฐานข้อมูล (SQL Server)", en: "Database (SQL Server)" },
+            "File System & Permissions": { th: "ไฟล์และสิทธิ์การเข้าถึง (Permissions)", en: "File System & Permissions" },
+            "Storage & System Services": { th: "พื้นที่จัดเก็บ & เซอร์วิสระบบ", en: "Storage & System Services" },
+            "Network, Port & SMTP": { th: "เครือข่าย, พอร์ต & SMTP", en: "Network, Port & SMTP" },
+            "Email SMTP (Gmail/Outlook)": { th: "อีเมล SMTP (Gmail/Outlook)", en: "Email SMTP (Gmail/Outlook)" },
+            "Printer & RPC": { th: "เครื่องพิมพ์ & RPC", en: "Printer & RPC" },
+            "Basic Troubleshooting Tools": { th: "เครื่องมือตรวจสอบพื้นฐาน", en: "Basic Troubleshooting Tools" },
+            "Log File Locations": { th: "ตำแหน่งไฟล์ Log ที่สำคัญ", en: "Important Log File Locations" },
+            "Connectivity Tricks": { th: "เทคนิคทดสอบการเชื่อมต่อ (No Code)", en: "Connectivity Tricks (No Code)" },
+            "Performance Counters": { th: "ค่า Performance ที่ต้องดู", en: "Key Performance Counters" }
         };
 
         function getData() {
@@ -452,11 +942,51 @@
         }
 
         function clearLocalStorage() {
-            if(confirm("Are you sure you want to reset to default data?")) {
+            const msg = currentLang === 'th' ? "คุณแน่ใจหรือไม่ที่จะรีเซ็ตข้อมูลเป็นค่าเริ่มต้น?" : "Are you sure you want to reset to default data?";
+            if(confirm(msg)) {
                 localStorage.removeItem('errorGuideData');
                 renderTables();
-                alert("Data reset to default.");
+                alert(currentLang === 'th' ? "รีเซ็ตข้อมูลเรียบร้อย" : "Data reset successful.");
             }
+        }
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'th' ? 'en' : 'th';
+            document.getElementById('lang-icon').textContent = currentLang === 'th' ? '🇹🇭' : '🇬🇧';
+            document.getElementById('lang-text').textContent = currentLang === 'th' ? 'TH' : 'EN';
+            
+            // Toggle Static Text
+            document.querySelectorAll('.lang-th').forEach(el => {
+                if(currentLang === 'th') el.classList.remove('hidden'); else el.classList.add('hidden');
+            });
+            document.querySelectorAll('.lang-en').forEach(el => {
+                if(currentLang === 'en') el.classList.remove('hidden'); else el.classList.add('hidden');
+            });
+            
+            updateDynamicHeaders();
+            renderTables();
+        }
+        
+        function updateDynamicHeaders() {
+            // Update Category Headers
+            document.querySelectorAll('.category-section').forEach(section => {
+                const catKey = section.getAttribute('data-category');
+                const titleEl = section.querySelector('h2');
+                if (titleEl && catKey && categoryTitles[catKey]) {
+                   titleEl.textContent = currentLang === 'th' ? categoryTitles[catKey].th : categoryTitles[catKey].en;
+                }
+            });
+            
+            // Update Table Headers
+            document.querySelectorAll('th').forEach(th => {
+                 const text = th.innerText.trim();
+                 for (const [key, val] of Object.entries(tableHeaderMap)) {
+                     if (val.th === text || val.en === text) {
+                         th.textContent = currentLang === 'th' ? val.th : val.en;
+                         break;
+                     }
+                 }
+            });
         }
 
         function renderTables() {
@@ -468,7 +998,7 @@
                 if(el) el.innerHTML = "";
             });
 
-            // Populate
+            // Render Error Tables
             data.forEach(item => {
                 const tbodyId = catMap[item.cat];
                 if (tbodyId) {
@@ -478,127 +1008,206 @@
                         row.className = "hover:bg-slate-50 transition-colors";
                         const roleClass = roleColors[item.role] || "bg-gray-100 text-gray-700";
                         
+                        // Fallback logic for mixed data sources (imported vs default)
+                        const desc = currentLang === 'th' ? (item.desc_th || item.desc) : (item.desc_en || item.desc || item.desc_th);
+                        const sol = currentLang === 'th' ? (item.sol_th || item.sol) : (item.sol_en || item.sol || item.sol_th);
+
                         row.innerHTML = `
                             <td class="p-4 font-mono text-red-600 font-medium">${item.code}</td>
                             <td class="p-4"><span class="px-2 py-1 ${roleClass} rounded text-xs font-bold">${item.role}</span></td>
-                            <td class="p-4 text-slate-600">${item.desc}</td>
-                            <td class="p-4 text-slate-700">${item.sol}</td>
+                            <td class="p-4 text-slate-600">${desc}</td>
+                            <td class="p-4 text-slate-700">${sol}</td>
                         `;
                         tbody.appendChild(row);
                     }
                 }
             });
+            
+            // Render Tools Table
+            const toolsContainer = document.getElementById('tools-container');
+            if (toolsContainer) {
+                const cmdHeader = currentLang === 'th' ? "คำสั่ง" : "Command";
+                const exHeader = currentLang === 'th' ? "ตัวอย่าง" : "Example";
+                const purpHeader = currentLang === 'th' ? "วัตถุประสงค์" : "Purpose";
+                
+                const toolsHtml = `
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase tracking-wider">
+                                <th class="p-4 w-1/4">${cmdHeader}</th>
+                                <th class="p-4 w-1/3">${exHeader}</th>
+                                <th class="p-4 w-1/3">${purpHeader}</th>
+                            </tr></thead>
+                            <tbody class="divide-y divide-slate-100 text-sm md:text-base search-target">
+                                ${toolsData.map(t => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-4 font-bold">${t.cmd}</td>
+                                    <td class="p-4"><code class="cmd-box">${t.ex}</code></td>
+                                    <td class="p-4">${currentLang === 'th' ? t.desc_th : t.desc_en}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+                toolsContainer.innerHTML = toolsHtml;
+            }
+            
+            // Call update dynamic headers to ensure section titles match lang
+            updateDynamicHeaders();
         }
 
         // --- 3. EXPORT / IMPORT / TEMPLATE LOGIC ---
         function exportData(type) {
-            // ปิดเมนูหลังกด
             document.getElementById('exportMenu').classList.add('hidden');
-
             const data = getData();
-            // Simplify data for export (rename keys)
             const exportData = data.map(item => ({
                 "Category": item.cat,
-                "Error Code/Message": item.code,
-                "Responsibility": item.role,
-                "Description": item.desc,
-                "Solution": item.sol
+                "Code": item.code,
+                "Role": item.role,
+                "Desc_TH": item.desc_th || item.desc,
+                "Desc_EN": item.desc_en || item.desc,
+                "Sol_TH": item.sol_th || item.sol,
+                "Sol_EN": item.sol_en || item.sol
             }));
-
             const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "System Errors");
-
-            if (type === 'csv') {
-                XLSX.writeFile(wb, "System_Error_Guide.csv");
-            } else {
-                XLSX.writeFile(wb, "System_Error_Guide.xlsx");
-            }
+            XLSX.writeFile(wb, type === 'csv' ? "System_Error_Guide.csv" : "System_Error_Guide.xlsx");
         }
 
-        // ฟังก์ชันเปิดปิดเมนู Export
         function toggleExportMenu() {
             const menu = document.getElementById('exportMenu');
             menu.classList.toggle('hidden');
         }
 
-        // ปิดเมนูเมื่อคลิกที่อื่น
         window.addEventListener('click', function(e) {
             const btn = document.querySelector('button[onclick="toggleExportMenu()"]');
             const menu = document.getElementById('exportMenu');
-            // ตรวจสอบว่ามี element เหล่านี้อยู่จริงหรือไม่ก่อนใช้งาน
             if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
                 menu.classList.add('hidden');
             }
         });
 
         function downloadTemplate() {
-            // Create a single row example
-            const templateData = [
-                {
-                    "Category": "HTTP Status Codes",
-                    "Error Code/Message": "Example 500",
-                    "Responsibility": "APP DEVELOPER",
-                    "Description": "Example Description",
-                    "Solution": "Example Solution"
-                }
-            ];
-            
+            const templateData = [{ "Category": "HTTP Status Codes", "Code": "500", "Role": "APP DEVELOPER", "Desc_TH": "คำอธิบายไทย", "Desc_EN": "English Description", "Sol_TH": "วิธีแก้ไทย", "Sol_EN": "English Solution" }];
             const ws = XLSX.utils.json_to_sheet(templateData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Template");
             XLSX.writeFile(wb, "System_Error_Template.csv");
         }
 
-        function triggerImport() {
-            document.getElementById('fileInput').click();
-        }
+        function triggerImport() { document.getElementById('fileInput').click(); }
 
         function handleFileImport(input) {
             const file = input.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(firstSheet);
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 
-                // Map imported data back to internal structure
                 const importedItems = json.map(row => ({
-                    cat: row["Category"] || row["cat"], // flexible key check
-                    code: row["Error Code/Message"] || row["code"],
-                    role: row["Responsibility"] || row["role"],
-                    desc: row["Description"] || row["desc"],
-                    sol: row["Solution"] || row["sol"]
-                })).filter(item => item.cat && item.code); // Validate
+                    cat: row["Category"], code: row["Code"], role: row["Role"],
+                    desc_th: row["Desc_TH"] || row["Desc"], // Fallback if old format
+                    desc_en: row["Desc_EN"] || row["Desc"],
+                    sol_th: row["Sol_TH"] || row["Sol"],
+                    sol_en: row["Sol_EN"] || row["Sol"]
+                })).filter(item => item.cat && item.code);
 
                 if (importedItems.length > 0) {
                     const currentData = getData();
-                    const newData = currentData.concat(importedItems);
-                    saveData(newData);
-                    alert(`Successfully imported ${importedItems.length} items!`);
-                } else {
-                    alert("No valid data found in file. Please ensure column headers match Export format.");
+                    saveData(currentData.concat(importedItems));
+                    alert(currentLang === 'th' ? `นำเข้าข้อมูลสำเร็จ ${importedItems.length} รายการ!` : `Imported ${importedItems.length} items!`);
                 }
-                input.value = ""; // clear input
+                input.value = "";
             };
             reader.readAsArrayBuffer(file);
         }
+        
+        // Modal Logic
+        function toggleModal(modalID){
+            const modal = document.getElementById(modalID);
+            modal.classList.toggle("opacity-0");
+            modal.classList.toggle("pointer-events-none");
+            document.body.classList.toggle("modal-active");
+        }
+        
+        function handleAddNew(e) {
+            e.preventDefault();
+             const newItem = {
+                cat: document.getElementById('newCategory').value,
+                code: document.getElementById('newCode').value,
+                role: document.getElementById('newRole').value,
+                desc_th: document.getElementById('newDescTh').value,
+                desc_en: document.getElementById('newDescEn').value,
+                sol_th: document.getElementById('newSolTh').value,
+                sol_en: document.getElementById('newSolEn').value
+            };
+            const currentData = getData();
+            currentData.push(newItem);
+            saveData(currentData);
+            toggleModal('addModal');
+            alert(currentLang === 'th' ? "เพิ่มข้อมูลเรียบร้อย!" : "Data Added Successfully!");
+            document.getElementById('addErrorForm').reset();
+        }
 
-        // --- 4. UI TABS & SEARCH ---
+        // --- AI LOGIC (GEMINI) ---
+        async function handleAiAnalyze() {
+            const input = document.getElementById('aiInput').value;
+            if (!input.trim()) return;
+
+            const outputDiv = document.getElementById('aiOutput');
+            const loadingDiv = document.getElementById('aiLoading');
+            
+            outputDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            const langInstruction = currentLang === 'th' ? "Respond in Thai language." : "Respond in English language.";
+
+            try {
+                const prompt = `You are an expert IT System Administrator. Analyze the following error log or symptom and provide: 1. Possible Root Cause 2. Step-by-step Solution 3. Prevention Tips. ${langInstruction}
+                Format the response with simple HTML tags (<b>, <ul>, <li>, <br>, <code>) for readability inside a div. Do NOT use markdown code blocks.
+                User Input: ${input}`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to analyze. Please try again.";
+
+                outputDiv.innerHTML = text;
+                outputDiv.classList.remove('hidden');
+            } catch (e) {
+                outputDiv.innerHTML = `<span class="text-red-600">API Error: ${e.message}</span>`;
+                outputDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        // --- UI TABS ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.add('bg-white', 'text-slate-600', 'border-slate-300'));
 
-            document.getElementById(tabId).classList.remove('hidden');
-            document.getElementById(tabId).classList.add('block');
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.remove('hidden');
+                tabContent.classList.add('block');
+            }
+
             let btn = document.getElementById('btn-' + tabId);
-            btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-300');
-            btn.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+            if (btn) {
+                btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-300');
+                btn.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+            }
         }
 
         document.getElementById('searchInput').addEventListener('keyup', function() {
@@ -624,9 +1233,11 @@
             }
         });
 
-        // Initialize
-        renderTables();
-        switchTab('web-app');
+        // Initialize on DOM Ready
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTables();
+            switchTab('web-app');
+        });
 
     </script>
 </body>
